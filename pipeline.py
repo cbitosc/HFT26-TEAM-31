@@ -315,10 +315,12 @@ def run_agent2_inheritance(query: Optional[str] = None) -> Dict[str, Any]:
             "inherited_score": 52.0,
             "score_delta": 0.0,
             "score_jump_summary": "52.0 -> 52.0 (No memory match; 0 pts jump)",
-            "prompt_injection": "=== [AutoEvolve Memory Layer: No Match Found] ===
-Query did not meet 80% similarity threshold.
-Agent 2 must solve problem autonomously without prior fix.
-=================================================",
+            "prompt_injection": (
+                "=== [AutoEvolve Memory Layer: No Match Found] ===\n"
+                "Query did not meet 80% similarity threshold.\n"
+                "Agent 2 must solve problem autonomously without prior fix.\n"
+                "================================================="
+            ),
             "inherited_diff": "# No inherited diff available. Independent exploration required.",
             "execution_steps": [
                 f"Agent 2 diagnosed symptom query: '{active_query}'",
@@ -340,38 +342,17 @@ Agent 2 must solve problem autonomously without prior fix.
         prompt_injection = service.format_agent_prompt(inherited_memory)
     except Exception:
         prompt_injection = (
-            f"=== [AutoEvolve Memory Layer: Inherited Prior Fix] ===
-"
-            f"Source Task: task_lru_cache_ttl_v3 (Semantic Match Score: {similarity_score * 100:.2f}%)
-"
-            f"Identified Failure Signature: {failure_sig}
-"
-            f"Root Cause: {root_cause}
-"
-            f"Recommended Fix Strategy: {fix_strategy}
-"
-            f"Verified Reference Code Diff:
-"
-            f"```diff
-"
-            f"{code_diff or '--- a/lru_cache.py
-+++ b/lru_cache.py
-@@ -10,6 +10,10 @@
-'}
-"
-            f"```
-"
+            f"=== [AutoEvolve Memory Layer: Inherited Prior Fix] ===\n"
+            f"Source Task: task_lru_cache_ttl_v3 (Semantic Match Score: {similarity_score * 100:.2f}%)\n"
+            f"Identified Failure Signature: {failure_sig}\n"
+            f"Root Cause: {root_cause}\n"
+            f"Recommended Fix Strategy: {fix_strategy}\n"
+            f"Verified Reference Code Diff:\n"
+            f"```diff\n"
+            f"{code_diff or '--- a/lru_cache.py\n+++ b/lru_cache.py\n@@ -10,6 +10,10 @@\n'}\n"
+            f"```\n"
             f"======================================================"
-        )\n"
-        f"Identified Failure Signature: {failure_sig}\n"
-        f"Root Cause: {root_cause}\n"
-        f"Recommended Fix Strategy: {fix_strategy}\n"
-        f"Verified Reference Code Diff:\n"
-        f"```diff\n"
-        f"{code_diff or '--- a/lru_cache.py\n+++ b/lru_cache.py\n@@ -10,6 +10,10 @@\n'}\n"
-        f"```\n"
-        f"======================================================"
-    )
+        )
 
     baseline_score = 52.0
     inherited_score = 100.0
