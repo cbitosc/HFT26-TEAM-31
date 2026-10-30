@@ -116,14 +116,6 @@ class MemoryService:
             "payload": payload,
         }
 
-    def query_fix(
-        self,
-        query_text: str,
-        similarity_threshold: Optional[float] = None,
-    ) -> Optional[Dict[str, Any]]:
-        """Query decentralized memory for a matching fix pattern (convenience alias)."""
-        return self.retrieve_inherited_memory(query_text, similarity_threshold)
-
     def retrieve_inherited_memory(
         self,
         query_text: str,
