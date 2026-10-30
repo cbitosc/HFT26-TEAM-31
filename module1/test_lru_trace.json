@@ -872,7 +872,7 @@
           "category": "basic",
           "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.232
+          "elapsed": 0.1546
         },
         {
           "id": "capacity_zero",
@@ -881,21 +881,21 @@
           "status": "failed",
           "exit_code": 2,
           "stderr": "",
-          "elapsed": 0.1846
+          "elapsed": 0.0859
         },
         {
           "id": "eviction",
           "category": "basic",
           "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.1947
+          "elapsed": 0.0949
         },
         {
           "id": "overwrite",
           "category": "edge",
           "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.1763
+          "elapsed": 0.0889
         },
         {
           "id": "order_after_get",
@@ -904,21 +904,21 @@
           "status": "failed",
           "exit_code": 2,
           "stderr": "",
-          "elapsed": 0.1807
+          "elapsed": 0.0771
         },
         {
           "id": "single_cap",
           "category": "boundary",
           "description": "Capacity of 1: each new insert immediately evicts the previous item",
           "status": "passed",
-          "elapsed": 0.1759
+          "elapsed": 0.1051
         },
         {
           "id": "not_found",
           "category": "invalid_input",
           "description": "Queries for nonexistent keys consistently return -1",
           "status": "passed",
-          "elapsed": 0.1947
+          "elapsed": 0.1212
         },
         {
           "id": "perf_100k",
@@ -933,15 +933,15 @@
           "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
           "status": "failed",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpabg8kxzk\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
-          "elapsed": 0.1769
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmppftiitvv\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.1889
         },
         {
           "id": "many_puts",
           "category": "regression",
           "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
           "status": "passed",
-          "elapsed": 0.5251
+          "elapsed": 0.4524
         }
       ]
     },
@@ -979,55 +979,55 @@
           "category": "basic",
           "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.1829
+          "elapsed": 0.1502
         },
         {
           "id": "capacity_zero",
           "category": "boundary",
           "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
           "status": "passed",
-          "elapsed": 0.156
+          "elapsed": 0.1048
         },
         {
           "id": "eviction",
           "category": "basic",
           "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.165
+          "elapsed": 0.0984
         },
         {
           "id": "overwrite",
           "category": "edge",
           "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.2378
+          "elapsed": 0.0935
         },
         {
           "id": "order_after_get",
           "category": "boundary",
           "description": "Ensures get(key) updates recency so the other key is evicted first",
           "status": "passed",
-          "elapsed": 0.3606
+          "elapsed": 0.0873
         },
         {
           "id": "single_cap",
           "category": "boundary",
           "description": "Capacity of 1: each new insert immediately evicts the previous item",
           "status": "passed",
-          "elapsed": 0.1871
+          "elapsed": 0.0941
         },
         {
           "id": "not_found",
           "category": "invalid_input",
           "description": "Queries for nonexistent keys consistently return -1",
           "status": "passed",
-          "elapsed": 0.1754
+          "elapsed": 0.0824
         },
         {
           "id": "perf_100k",
           "category": "performance",
           "status": "passed",
-          "elapsed": 0.1163
+          "elapsed": 0.0984
         },
         {
           "id": "unhashable",
@@ -1035,15 +1035,15 @@
           "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
           "status": "failed",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmps8h2cbho\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
-          "elapsed": 0.2217
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmp5w67zlxv\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.1113
         },
         {
           "id": "many_puts",
           "category": "regression",
           "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
           "status": "passed",
-          "elapsed": 0.1582
+          "elapsed": 0.0761
         }
       ]
     },
@@ -1076,69 +1076,69 @@
           "category": "basic",
           "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.2606
+          "elapsed": 0.0824
         },
         {
           "id": "capacity_zero",
           "category": "boundary",
           "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
           "status": "passed",
-          "elapsed": 0.3041
+          "elapsed": 0.0752
         },
         {
           "id": "eviction",
           "category": "basic",
           "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.2206
+          "elapsed": 0.0814
         },
         {
           "id": "overwrite",
           "category": "edge",
           "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.2036
+          "elapsed": 0.0766
         },
         {
           "id": "order_after_get",
           "category": "boundary",
           "description": "Ensures get(key) updates recency so the other key is evicted first",
           "status": "passed",
-          "elapsed": 0.211
+          "elapsed": 0.0729
         },
         {
           "id": "single_cap",
           "category": "boundary",
           "description": "Capacity of 1: each new insert immediately evicts the previous item",
           "status": "passed",
-          "elapsed": 0.2055
+          "elapsed": 0.0747
         },
         {
           "id": "not_found",
           "category": "invalid_input",
           "description": "Queries for nonexistent keys consistently return -1",
           "status": "passed",
-          "elapsed": 0.1974
+          "elapsed": 0.0741
         },
         {
           "id": "perf_100k",
           "category": "performance",
           "status": "passed",
-          "elapsed": 0.1819
+          "elapsed": 0.0673
         },
         {
           "id": "unhashable",
           "category": "invalid_input",
           "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
           "status": "passed",
-          "elapsed": 0.2007
+          "elapsed": 0.0846
         },
         {
           "id": "many_puts",
           "category": "regression",
           "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
           "status": "passed",
-          "elapsed": 0.219
+          "elapsed": 0.0851
         }
       ]
     },

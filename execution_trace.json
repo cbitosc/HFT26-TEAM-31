@@ -1,26 +1,27 @@
 {
-  "task_id": "rate_limiter_02",
-  "task_name": "API Rate Limiter (Rolling 60s Window)",
+  "task_id": "lru_cache_01",
+  "task_name": "Least Recently Used (LRU) Cache",
   "programming_language": "python",
   "iterations_count": 3,
   "validated_tests_count": 10,
   "test_generation": {
-    "task_id": "rate_limiter_02",
+    "task_id": "lru_cache_01",
     "total_generated": 12,
     "validated_count": 10,
     "rejected_count": 2,
     "category_breakdown": {
-      "basic": 3,
+      "basic": 2,
       "boundary": 3,
-      "edge": 2,
-      "invalid_input": 1,
-      "performance": 1
+      "edge": 1,
+      "invalid_input": 2,
+      "performance": 1,
+      "regression": 1
     },
     "rejected_details": [
       {
         "test_id": "invalid_ambiguous_spec",
         "category": "invalid_input",
-        "reason": "Oracle output mismatch for allow_request(user_x, 1.0): oracle expected True, test claimed 999999"
+        "reason": "Oracle output mismatch for get(user_x): oracle expected -1, test claimed 1.0"
       },
       {
         "test_id": "malformed_empty_ops",
@@ -30,703 +31,1130 @@
     ],
     "validated_tests": [
       {
-        "id": "rl_basic_allowance",
-        "description": "Allows up to max_requests (5) requests within the permitted window",
+        "id": "basic",
+        "description": "Standard LRU insertion, retrieval, and eviction sequence",
         "category": "basic",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            true
+            "put",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_1",
-            20.0,
-            true
+            "put",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_1",
-            30.0,
-            true
+            "get",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_1",
-            40.0,
-            true
+            "get",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_1",
-            50.0,
-            true
+            "put",
+            3,
+            30
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "get",
+            2,
+            20
+          ],
+          [
+            "get",
+            3,
+            30
           ]
         ]
       },
       {
-        "id": "rl_sixth_request_rejected",
-        "description": "Sixth request within the same 60-second window is strictly denied",
+        "id": "capacity_zero",
+        "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
         "category": "boundary",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "capacity": 0,
         "ops": [
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            true
+            "put",
+            1,
+            1
           ],
           [
-            "allow_request",
-            "user_1",
-            20.0,
-            true
+            "get",
+            1,
+            -1
           ],
           [
-            "allow_request",
-            "user_1",
-            30.0,
-            true
+            "put",
+            2,
+            2
           ],
           [
-            "allow_request",
-            "user_1",
-            40.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            50.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            55.0,
-            false
+            "get",
+            2,
+            -1
           ]
         ]
       },
       {
-        "id": "rl_boundary_burst_attack",
-        "description": "Fixed-window counter flaw test: prevents boundary-burst doubling across interval edges",
-        "category": "boundary",
-        "max_requests": 5,
-        "window_seconds": 60.0,
-        "ops": [
-          [
-            "allow_request",
-            "user_1",
-            55.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            56.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            57.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            58.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            59.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            62.0,
-            false
-          ]
-        ]
-      },
-      {
-        "id": "rl_window_expiry_allows_new",
-        "description": "Requests after the rolling window expires are permitted again",
+        "id": "eviction",
+        "description": "Deterministic eviction of oldest item upon reaching capacity",
         "category": "basic",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "user_1",
-            0.0,
-            true
+            "put",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            true
+            "put",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_1",
-            20.0,
-            true
+            "put",
+            3,
+            30
           ],
           [
-            "allow_request",
-            "user_1",
-            30.0,
-            true
+            "get",
+            1,
+            -1
           ],
           [
-            "allow_request",
-            "user_1",
-            40.0,
-            true
+            "get",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_1",
-            45.0,
-            false
-          ],
-          [
-            "allow_request",
-            "user_1",
-            61.0,
-            true
+            "get",
+            3,
+            30
           ]
         ]
       },
       {
-        "id": "rl_exact_expiration_boundary",
-        "description": "Request exactly at timestamp - window_seconds boundary is expired",
+        "id": "overwrite",
+        "description": "Overwriting an existing key updates value without altering valid capacity",
         "category": "edge",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            true
+            "put",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_1",
-            20.0,
-            true
+            "put",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_1",
-            30.0,
-            true
+            "put",
+            1,
+            15
           ],
           [
-            "allow_request",
-            "user_1",
-            40.0,
-            true
+            "get",
+            1,
+            15
           ],
           [
-            "allow_request",
-            "user_1",
-            50.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_1",
-            70.0,
-            true
+            "get",
+            2,
+            20
           ]
         ]
       },
       {
-        "id": "rl_multi_user_isolation",
-        "description": "Requests from different users are tracked independently",
-        "category": "basic",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "id": "order_after_get",
+        "description": "Ensures get(key) updates recency so the other key is evicted first",
+        "category": "boundary",
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "user_A",
-            10.0,
-            true
+            "put",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_A",
-            11.0,
-            true
+            "put",
+            2,
+            20
           ],
           [
-            "allow_request",
-            "user_A",
-            12.0,
-            true
+            "get",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_A",
-            13.0,
-            true
+            "put",
+            3,
+            30
           ],
           [
-            "allow_request",
-            "user_A",
-            14.0,
-            true
+            "get",
+            2,
+            -1
           ],
           [
-            "allow_request",
-            "user_A",
-            15.0,
-            false
+            "get",
+            1,
+            10
           ],
           [
-            "allow_request",
-            "user_B",
-            15.0,
-            true
-          ],
-          [
-            "allow_request",
-            "user_B",
-            16.0,
-            true
+            "get",
+            3,
+            30
           ]
         ]
       },
       {
-        "id": "rl_invalid_inputs",
-        "description": "Graceful handling of empty/None user_id and invalid timestamp without crash",
+        "id": "single_cap",
+        "description": "Capacity of 1: each new insert immediately evicts the previous item",
+        "category": "boundary",
+        "capacity": 1,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "get",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "get",
+            2,
+            20
+          ]
+        ]
+      },
+      {
+        "id": "not_found",
+        "description": "Queries for nonexistent keys consistently return -1",
         "category": "invalid_input",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "",
-            10.0,
-            false
+            "get",
+            99,
+            -1
           ],
           [
-            "allow_request",
-            null,
-            10.0,
-            false
+            "put",
+            1,
+            1
           ],
           [
-            "allow_request",
-            "user_1",
-            "not_a_number",
-            false
+            "get",
+            2,
+            -1
           ],
           [
-            "allow_request",
-            "user_1",
-            -50.0,
-            false
+            "get",
+            1,
+            1
           ]
         ]
       },
       {
-        "id": "rl_zero_capacity",
-        "description": "RateLimiter initialized with max_requests=0 rejects all requests",
-        "category": "boundary",
-        "max_requests": 0,
-        "window_seconds": 60.0,
+        "id": "perf_100k",
+        "description": "High-throughput O(1) performance stress test: 100k operations in <0.85s",
+        "category": "performance",
+        "perf": true,
+        "ops_count": 100000,
+        "capacity": 1000
+      },
+      {
+        "id": "unhashable",
+        "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+        "category": "invalid_input",
+        "capacity": 2,
         "ops": [
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            false
+            "put",
+            [
+              1,
+              2
+            ],
+            1,
+            "no_crash"
           ],
           [
-            "allow_request",
-            "user_2",
-            20.0,
-            false
+            "get",
+            [
+              1,
+              2
+            ],
+            -1
           ]
         ]
       },
       {
-        "id": "rl_remaining_tokens_query",
-        "description": "Accurately reports remaining available tokens per user",
-        "category": "edge",
-        "max_requests": 5,
-        "window_seconds": 60.0,
+        "id": "many_puts",
+        "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+        "category": "regression",
+        "capacity": 50,
         "ops": [
           [
-            "get_remaining_tokens",
-            "user_1",
-            10.0,
-            5
+            "put",
+            0,
+            0
           ],
           [
-            "allow_request",
-            "user_1",
-            10.0,
-            true
+            "put",
+            1,
+            1
           ],
           [
-            "get_remaining_tokens",
-            "user_1",
-            10.0,
+            "put",
+            2,
+            2
+          ],
+          [
+            "put",
+            3,
+            3
+          ],
+          [
+            "put",
+            4,
             4
           ],
           [
-            "allow_request",
-            "user_1",
-            12.0,
-            true
+            "put",
+            5,
+            5
           ],
           [
-            "get_remaining_tokens",
-            "user_1",
-            12.0,
-            3
+            "put",
+            6,
+            6
+          ],
+          [
+            "put",
+            7,
+            7
+          ],
+          [
+            "put",
+            8,
+            8
+          ],
+          [
+            "put",
+            9,
+            9
+          ],
+          [
+            "put",
+            10,
+            10
+          ],
+          [
+            "put",
+            11,
+            11
+          ],
+          [
+            "put",
+            12,
+            12
+          ],
+          [
+            "put",
+            13,
+            13
+          ],
+          [
+            "put",
+            14,
+            14
+          ],
+          [
+            "put",
+            15,
+            15
+          ],
+          [
+            "put",
+            16,
+            16
+          ],
+          [
+            "put",
+            17,
+            17
+          ],
+          [
+            "put",
+            18,
+            18
+          ],
+          [
+            "put",
+            19,
+            19
+          ],
+          [
+            "put",
+            20,
+            20
+          ],
+          [
+            "put",
+            21,
+            21
+          ],
+          [
+            "put",
+            22,
+            22
+          ],
+          [
+            "put",
+            23,
+            23
+          ],
+          [
+            "put",
+            24,
+            24
+          ],
+          [
+            "put",
+            25,
+            25
+          ],
+          [
+            "put",
+            26,
+            26
+          ],
+          [
+            "put",
+            27,
+            27
+          ],
+          [
+            "put",
+            28,
+            28
+          ],
+          [
+            "put",
+            29,
+            29
+          ],
+          [
+            "put",
+            30,
+            30
+          ],
+          [
+            "put",
+            31,
+            31
+          ],
+          [
+            "put",
+            32,
+            32
+          ],
+          [
+            "put",
+            33,
+            33
+          ],
+          [
+            "put",
+            34,
+            34
+          ],
+          [
+            "put",
+            35,
+            35
+          ],
+          [
+            "put",
+            36,
+            36
+          ],
+          [
+            "put",
+            37,
+            37
+          ],
+          [
+            "put",
+            38,
+            38
+          ],
+          [
+            "put",
+            39,
+            39
+          ],
+          [
+            "put",
+            40,
+            40
+          ],
+          [
+            "put",
+            41,
+            41
+          ],
+          [
+            "put",
+            42,
+            42
+          ],
+          [
+            "put",
+            43,
+            43
+          ],
+          [
+            "put",
+            44,
+            44
+          ],
+          [
+            "put",
+            45,
+            45
+          ],
+          [
+            "put",
+            46,
+            46
+          ],
+          [
+            "put",
+            47,
+            47
+          ],
+          [
+            "put",
+            48,
+            48
+          ],
+          [
+            "put",
+            49,
+            49
+          ],
+          [
+            "put",
+            50,
+            50
+          ],
+          [
+            "put",
+            51,
+            51
+          ],
+          [
+            "put",
+            52,
+            52
+          ],
+          [
+            "put",
+            53,
+            53
+          ],
+          [
+            "put",
+            54,
+            54
+          ],
+          [
+            "put",
+            55,
+            55
+          ],
+          [
+            "put",
+            56,
+            56
+          ],
+          [
+            "put",
+            57,
+            57
+          ],
+          [
+            "put",
+            58,
+            58
+          ],
+          [
+            "put",
+            59,
+            59
+          ],
+          [
+            "put",
+            60,
+            60
+          ],
+          [
+            "put",
+            61,
+            61
+          ],
+          [
+            "put",
+            62,
+            62
+          ],
+          [
+            "put",
+            63,
+            63
+          ],
+          [
+            "put",
+            64,
+            64
+          ],
+          [
+            "put",
+            65,
+            65
+          ],
+          [
+            "put",
+            66,
+            66
+          ],
+          [
+            "put",
+            67,
+            67
+          ],
+          [
+            "put",
+            68,
+            68
+          ],
+          [
+            "put",
+            69,
+            69
+          ],
+          [
+            "put",
+            70,
+            70
+          ],
+          [
+            "put",
+            71,
+            71
+          ],
+          [
+            "put",
+            72,
+            72
+          ],
+          [
+            "put",
+            73,
+            73
+          ],
+          [
+            "put",
+            74,
+            74
+          ],
+          [
+            "put",
+            75,
+            75
+          ],
+          [
+            "put",
+            76,
+            76
+          ],
+          [
+            "put",
+            77,
+            77
+          ],
+          [
+            "put",
+            78,
+            78
+          ],
+          [
+            "put",
+            79,
+            79
+          ],
+          [
+            "put",
+            80,
+            80
+          ],
+          [
+            "put",
+            81,
+            81
+          ],
+          [
+            "put",
+            82,
+            82
+          ],
+          [
+            "put",
+            83,
+            83
+          ],
+          [
+            "put",
+            84,
+            84
+          ],
+          [
+            "put",
+            85,
+            85
+          ],
+          [
+            "put",
+            86,
+            86
+          ],
+          [
+            "put",
+            87,
+            87
+          ],
+          [
+            "put",
+            88,
+            88
+          ],
+          [
+            "put",
+            89,
+            89
+          ],
+          [
+            "put",
+            90,
+            90
+          ],
+          [
+            "put",
+            91,
+            91
+          ],
+          [
+            "put",
+            92,
+            92
+          ],
+          [
+            "put",
+            93,
+            93
+          ],
+          [
+            "put",
+            94,
+            94
+          ],
+          [
+            "put",
+            95,
+            95
+          ],
+          [
+            "put",
+            96,
+            96
+          ],
+          [
+            "put",
+            97,
+            97
+          ],
+          [
+            "put",
+            98,
+            98
+          ],
+          [
+            "put",
+            99,
+            99
+          ],
+          [
+            "get",
+            0,
+            -1
           ]
         ]
-      },
-      {
-        "id": "rl_high_throughput_perf",
-        "description": "Performance stress test: 50,000 rapid check operations under 1.0 second",
-        "category": "performance",
-        "perf": true,
-        "ops_count": 50000,
-        "max_requests": 1000,
-        "window_seconds": 60.0
       }
     ]
   },
   "diffs": {
-    "diff_v1_v2": "--- v1.py\n+++ v2.py\n@@ -1,31 +1,37 @@\n-\"\"\"RateLimiter V1: Naive fixed-window implementation.\n-Vulnerable to boundary bursts and lacks input sanitization.\n+\"\"\"RateLimiter V2: Sliding window implementation.\n+Addresses boundary bursts with timestamp log, but fails boundary edge cases and invalid inputs.\n \"\"\"\n import time\n \n \n class RateLimiter:\n+    \"\"\"Sliding window log rate limiter with basic pruning.\"\"\"\n+\n     def __init__(self, max_requests: int = 5, window_seconds: float = 60.0):\n         self.max_requests = max_requests\n         self.window_seconds = window_seconds\n-        self.windows = {}\n+        self.requests = {}\n \n     def allow_request(self, user_id: str, timestamp: float = None) -> bool:\n         if timestamp is None:\n             timestamp = time.time()\n-        # Bug: Fixed window bucket allows 2x burst across window boundaries\n-        current_window = int(timestamp / self.window_seconds)\n-        key = (user_id, current_window)\n-        count = self.windows.get(key, 0)\n-        if count < self.max_requests:\n-            self.windows[key] = count + 1\n+        if user_id not in self.requests:\n+            self.requests[user_id] = []\n+\n+        # Bug: Strict < retains items at the exact cutoff boundary instead of expiring them\n+        cutoff = timestamp - self.window_seconds\n+        self.requests[user_id] = [t for t in self.requests[user_id] if t > cutoff]\n+\n+        if len(self.requests[user_id]) < self.max_requests:\n+            self.requests[user_id].append(timestamp)\n             return True\n         return False\n \n     def get_remaining_tokens(self, user_id: str, timestamp: float = None) -> int:\n         if timestamp is None:\n             timestamp = time.time()\n-        current_window = int(timestamp / self.window_seconds)\n-        key = (user_id, current_window)\n-        count = self.windows.get(key, 0)\n-        return max(0, self.max_requests - count)\n+        if user_id not in self.requests:\n+            return self.max_requests\n+        cutoff = timestamp - self.window_seconds\n+        valid = [t for t in self.requests[user_id] if t > cutoff]\n+        return max(0, self.max_requests - len(valid))\n",
-    "diff_v2_v3": "--- v2.py\n+++ v3.py\n@@ -1,37 +1,103 @@\n-\"\"\"RateLimiter V2: Sliding window implementation.\n-Addresses boundary bursts with timestamp log, but fails boundary edge cases and invalid inputs.\n+\"\"\"RateLimiter V3: Production-grade sliding window with collections.deque.\n+Robust edge cases, strict boundary expiration, defensive type validation, and high throughput.\n \"\"\"\n+from __future__ import annotations\n+\n import time\n+from collections import deque\n+from typing import Any, Dict, Optional\n \n \n class RateLimiter:\n-    \"\"\"Sliding window log rate limiter with basic pruning.\"\"\"\n+    \"\"\"Industrial-grade, rolling-window rate limiter.\n \n-    def __init__(self, max_requests: int = 5, window_seconds: float = 60.0):\n-        self.max_requests = max_requests\n-        self.window_seconds = window_seconds\n-        self.requests = {}\n+    Tracks request timestamps within a continuous rolling window using double-ended queues.\n+    Guarantees strict quota adherence without boundary burst vulnerabilities.\n+    \"\"\"\n \n-    def allow_request(self, user_id: str, timestamp: float = None) -> bool:\n+    def __init__(self, max_requests: int = 5, window_seconds: float = 60.0) -> None:\n+        \"\"\"Initialize the rate limiter with quota and window limits.\n+\n+        Args:\n+            max_requests: Maximum requests allowed in the rolling window.\n+            window_seconds: Window duration in seconds.\n+        \"\"\"\n+        self.max_requests = max_requests if max_requests > 0 else 0\n+        self.window_seconds = window_seconds if window_seconds > 0 else 0.0\n+        self.user_timestamps: Dict[str, deque[float]] = {}\n+\n+    def _sanitize(self, user_id: Any, timestamp: Any) -> Optional[tuple[str, float]]:\n+        \"\"\"Validate and sanitize user identity and timestamp inputs.\"\"\"\n+        if not user_id or not isinstance(user_id, str):\n+            return None\n         if timestamp is None:\n-            timestamp = time.time()\n-        if user_id not in self.requests:\n-            self.requests[user_id] = []\n+            ts = time.time()\n+        else:\n+            try:\n+                ts = float(timestamp)\n+            except (ValueError, TypeError):\n+                return None\n+        if ts < 0:\n+            return None\n+        return user_id, ts\n \n-        # Bug: Strict < retains items at the exact cutoff boundary instead of expiring them\n-        cutoff = timestamp - self.window_seconds\n-        self.requests[user_id] = [t for t in self.requests[user_id] if t > cutoff]\n+    def allow_request(self, user_id: str, timestamp: Optional[float] = None) -> bool:\n+        \"\"\"Determine whether an incoming request from user_id should be permitted.\n \n-        if len(self.requests[user_id]) < self.max_requests:\n-            self.requests[user_id].append(timestamp)\n+        Args:\n+            user_id: Identifier of the requesting client.\n+            timestamp: Optional epoch timestamp of the request.\n+\n+        Returns:\n+            True if request is permitted under the current quota, False otherwise.\n+        \"\"\"\n+        if self.max_requests <= 0 or self.window_seconds <= 0:\n+            return False\n+\n+        sanitized = self._sanitize(user_id, timestamp)\n+        if sanitized is None:\n+            return False\n+        uid, ts = sanitized\n+\n+        if uid not in self.user_timestamps:\n+            self.user_timestamps[uid] = deque()\n+\n+        q = self.user_timestamps[uid]\n+        cutoff = ts - self.window_seconds\n+\n+        # Prune all entries strictly older than or equal to expiration boundary\n+        while q and q[0] <= cutoff:\n+            q.popleft()\n+\n+        if len(q) < self.max_requests:\n+            q.append(ts)\n             return True\n         return False\n \n-    def get_remaining_tokens(self, user_id: str, timestamp: float = None) -> int:\n-        if timestamp is None:\n-            timestamp = time.time()\n-        if user_id not in self.requests:\n+    def get_remaining_tokens(self, user_id: str, timestamp: Optional[float] = None) -> int:\n+        \"\"\"Return the count of remaining available request tokens for user_id.\n+\n+        Args:\n+            user_id: Identifier of the requesting client.\n+            timestamp: Optional reference timestamp.\n+\n+        Returns:\n+            Integer token count in [0, max_requests].\n+        \"\"\"\n+        if self.max_requests <= 0 or self.window_seconds <= 0:\n+            return 0\n+\n+        sanitized = self._sanitize(user_id, timestamp)\n+        if sanitized is None:\n+            return 0\n+        uid, ts = sanitized\n+\n+        if uid not in self.user_timestamps:\n             return self.max_requests\n-        cutoff = timestamp - self.window_seconds\n-        valid = [t for t in self.requests[user_id] if t > cutoff]\n-        return max(0, self.max_requests - len(valid))\n+\n+        q = self.user_timestamps[uid]\n+        cutoff = ts - self.window_seconds\n+        while q and q[0] <= cutoff:\n+            q.popleft()\n+\n+        return max(0, self.max_requests - len(q))\n"
+    "diff_v1_v2": "--- v1.py\n+++ v2.py\n@@ -2,14 +2,16 @@\n \n class LRUCache:\n     def __init__(self, capacity: int):\n+        if capacity < 0:\n+            raise ValueError(\"Capacity must be non-negative\")\n+        self.capacity = capacity\n         self.cache = OrderedDict()\n-        self.capacity = capacity\n \n     def get(self, key):\n         if key not in self.cache:\n             return -1\n         else:\n-            # Move the accessed key to the end to show that it was recently used\n+            # Move the key to the end to show that it was recently used\n             self.cache.move_to_end(key)\n             return self.cache[key]\n \n@@ -19,23 +21,14 @@\n         except TypeError:\n             raise ValueError(\"Key must be hashable\")\n \n+        if self.capacity == 0:\n+            raise ValueError(\"Cannot put items into a cache with zero capacity\")\n+\n         if key in self.cache:\n-            # Update the value and move the key to the end\n+            # Move the key to the end to show that it was recently used\n             self.cache.move_to_end(key)\n         elif len(self.cache) >= self.capacity:\n             # Pop the first item (least recently used)\n             self.cache.popitem(last=False)\n-        \n-        self.cache[key] = value\n \n-# Example usage:\n-# cache = LRUCache(2)\n-# cache.put(1, 1)\n-# cache.put(2, 2)\n-# print(cache.get(1))       # returns 1\n-# cache.put(3, 3)           # evicts key 2\n-# print(cache.get(2))       # returns -1 (not found)\n-# cache.put(4, 4)           # evicts key 1\n-# print(cache.get(1))       # returns -1 (not found)\n-# print(cache.get(3))       # returns 3\n-# print(cache.get(4))       # returns 4+        self.cache[key] = value",
+    "diff_v2_v3": "--- v2.py\n+++ v3.py\n@@ -2,16 +2,15 @@\n \n class LRUCache:\n     def __init__(self, capacity: int):\n-        if capacity < 0:\n-            raise ValueError(\"Capacity must be non-negative\")\n+        if capacity <= 0:\n+            raise ValueError(\"Capacity must be greater than zero.\")\n+        self.cache = OrderedDict()\n         self.capacity = capacity\n-        self.cache = OrderedDict()\n \n     def get(self, key):\n         if key not in self.cache:\n             return -1\n         else:\n-            # Move the key to the end to show that it was recently used\n             self.cache.move_to_end(key)\n             return self.cache[key]\n \n@@ -19,16 +18,10 @@\n         try:\n             hash(key)  # Check if the key is hashable\n         except TypeError:\n-            raise ValueError(\"Key must be hashable\")\n-\n-        if self.capacity == 0:\n-            raise ValueError(\"Cannot put items into a cache with zero capacity\")\n-\n+            raise TypeError(\"Key must be hashable.\")\n+        \n         if key in self.cache:\n-            # Move the key to the end to show that it was recently used\n             self.cache.move_to_end(key)\n-        elif len(self.cache) >= self.capacity:\n-            # Pop the first item (least recently used)\n-            self.cache.popitem(last=False)\n-\n-        self.cache[key] = value+        self.cache[key] = value\n+        if len(self.cache) > self.capacity:\n+            self.cache.popitem(last=False)"
   },
-  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n\n## Progression Summary\n\n- **Iteration V1**: Score 83.0 (Passed 8/10)\n- **Iteration V2**: Score 89.0 (Passed 9/10)\n- **Iteration V3**: Score 100.0 (Passed 10/10)\n\n---\n\n### Phase 1: V1 -> V2 Revision\n- **Diagnosed Failure**: `BoundaryBurstVulnerability` (Severity: CRITICAL)\n- **Identified Root Cause**: The rate limiter employs fixed time-slice windowing. When requests cluster near interval boundaries (such as end of minute one and start of minute two), clients can execute twice the permitted quota within a fraction of the window.\n- **Actionable Directive**: Replace fixed window counters with a continuous sliding window algorithm, such as sliding timestamp logs or double-ended queues. Store timestamps per user and prune entries older than the current timestamp minus window duration.\n- **Observed Score Delta**: +6.0 points\n\n### Phase 2: V2 -> V3 Revision\n- **Diagnosed Failure**: `BoundaryPruningOffByOneAndInvalidInput` (Severity: HIGH)\n- **Identified Root Cause**: The sliding window logic retains timestamps located precisely at the expiration cutoff boundary (timestamp minus window seconds), and crashes when presented with empty or non-numeric identifiers.\n- **Actionable Directive**: Ensure expiration checks prune all timestamps less than or equal to the cutoff boundary. Add defensive validation for user identifiers and non-numeric or negative timestamps.\n- **Observed Score Delta**: +11.0 points\n",
+  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n\n## Progression Summary\n\n- **Iteration V1**: Score 79.5 (Passed 8/10)\n- **Iteration V2**: Score 79.5 (Passed 8/10)\n- **Iteration V3**: Score 79.5 (Passed 8/10)\n\n---\n\n### Phase 1: V1 -> V2 Revision\n- **Diagnosed Failure**: `IMPLEMENTATION_ERROR` (Severity: HIGH)\n- **Identified Root Cause**: The LRUCache implementation fails to handle cases where the capacity is zero and improperly manages unhashable keys.\n- **Actionable Directive**: Modify the put method to check if the capacity is zero and raise an error if an attempt is made to add an item. Additionally, ensure that unhashable keys are correctly rejected with a ValueError.\n- **Observed Score Delta**: +0.0 points\n\n### Phase 2: V2 -> V3 Revision\n- **Diagnosed Failure**: `ARCHITECTURAL` (Severity: CRITICAL)\n- **Identified Root Cause**: The LRUCache implementation fails to handle zero capacity and unhashable keys correctly. When the cache capacity is set to zero, the put method incorrectly allows operations, leading to inconsistencies. Additionally, the use of ValueError for unhashable keys violates expected exception handling.\n- **Actionable Directive**: Modify the __init__ method to disallow zero capacity and raise an error. In the put method, raise TypeError instead of ValueError for unhashable keys.\n- **Observed Score Delta**: +0.0 points\n",
   "zk_inputs": {
-    "score_v1": 83,
-    "score_v2": 89,
-    "score_v3": 100,
-    "log_hash_v1": "224272109479383928061219031960829550935981961561474213281906842524975284100",
-    "log_hash_v2": "240089402946199150136036383495147092824007214537255483485692177827633841215",
-    "log_hash_v3": "351150408337968279903162172140351739747795151664282229013545978710733566351",
-    "hash_v1_hex": "7eeefae10bc346dcfcf5e211a4f654e6f2f7d5e088e4b28eaf6ede8242bf8440",
-    "hash_v2_hex": "87e2c2e6b6f3b63d1ede3209eb7f82f8fdfba4a7faaf6928fef7cdd0d8443f6b",
-    "hash_v3_hex": "c6be7c8b530b813489ee47e40c1f6c98d62f482a9040afff8aca052367318f2e",
-    "score_v1_full": 83.0,
-    "score_v2_full": 89.0,
-    "score_v3_full": 100.0
+    "score_v1": 80,
+    "score_v2": 80,
+    "score_v3": 80,
+    "log_hash_v1": "417098838309353390016436967428228637974197347931934496090933810531863929975",
+    "log_hash_v2": "238684243786769734601934024506820836565995047011675230310285520152251794167",
+    "log_hash_v3": "339787638310759404109510837396457673756825107472196408566004474463816825897",
+    "hash_v1_hex": "ec11cfc3d81c0537302d06fd7d105104a1a136631f87ba7c3b09533c6ca47781",
+    "hash_v2_hex": "87172aa6b90422759e11b8847b10a63d1f639434b9aa1f607933c0c50702f7e3",
+    "hash_v3_hex": "c0501ffac06527bc46e4e868156e1fe387c35eb5395423e4469a2cf474bc2980",
+    "score_v1_full": 79.5,
+    "score_v2_full": 79.5,
+    "score_v3_full": 79.5
   },
   "v1": {
-    "code": "\"\"\"RateLimiter V1: Naive fixed-window implementation.\nVulnerable to boundary bursts and lacks input sanitization.\n\"\"\"\nimport time\n\n\nclass RateLimiter:\n    def __init__(self, max_requests: int = 5, window_seconds: float = 60.0):\n        self.max_requests = max_requests\n        self.window_seconds = window_seconds\n        self.windows = {}\n\n    def allow_request(self, user_id: str, timestamp: float = None) -> bool:\n        if timestamp is None:\n            timestamp = time.time()\n        # Bug: Fixed window bucket allows 2x burst across window boundaries\n        current_window = int(timestamp / self.window_seconds)\n        key = (user_id, current_window)\n        count = self.windows.get(key, 0)\n        if count < self.max_requests:\n            self.windows[key] = count + 1\n            return True\n        return False\n\n    def get_remaining_tokens(self, user_id: str, timestamp: float = None) -> int:\n        if timestamp is None:\n            timestamp = time.time()\n        current_window = int(timestamp / self.window_seconds)\n        key = (user_id, current_window)\n        count = self.windows.get(key, 0)\n        return max(0, self.max_requests - count)\n",
+    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        self.cache = OrderedDict()\n        self.capacity = capacity\n\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        else:\n            # Move the accessed key to the end to show that it was recently used\n            self.cache.move_to_end(key)\n            return self.cache[key]\n\n    def put(self, key, value):\n        try:\n            hash(key)  # Check if the key is hashable\n        except TypeError:\n            raise ValueError(\"Key must be hashable\")\n\n        if key in self.cache:\n            # Update the value and move the key to the end\n            self.cache.move_to_end(key)\n        elif len(self.cache) >= self.capacity:\n            # Pop the first item (least recently used)\n            self.cache.popitem(last=False)\n        \n        self.cache[key] = value\n\n# Example usage:\n# cache = LRUCache(2)\n# cache.put(1, 1)\n# cache.put(2, 2)\n# print(cache.get(1))       # returns 1\n# cache.put(3, 3)           # evicts key 2\n# print(cache.get(2))       # returns -1 (not found)\n# cache.put(4, 4)           # evicts key 1\n# print(cache.get(1))       # returns -1 (not found)\n# print(cache.get(3))       # returns 3\n# print(cache.get(4))       # returns 4",
     "eval": {
       "passed": 8,
       "total": 10,
       "failed_tests": [
-        "rl_boundary_burst_attack",
-        "rl_invalid_inputs"
+        "capacity_zero",
+        "unhashable"
       ],
       "correctness": 80.0,
       "efficiency": 100.0,
       "safety": 50.0,
-      "quality": 100.0,
-      "final_score": 83.0,
-      "trace_hash_hex": "7eeefae10bc346dcfcf5e211a4f654e6f2f7d5e088e4b28eaf6ede8242bf8440",
-      "trace_hash_zk": "224272109479383928061219031960829550935981961561474213281906842524975284100",
+      "quality": 65.0,
+      "final_score": 79.5,
+      "trace_hash_hex": "ec11cfc3d81c0537302d06fd7d105104a1a136631f87ba7c3b09533c6ca47781",
+      "trace_hash_zk": "417098838309353390016436967428228637974197347931934496090933810531863929975",
       "test_details": [
         {
-          "id": "rl_basic_allowance",
+          "id": "basic",
           "category": "basic",
-          "description": "Allows up to max_requests (5) requests within the permitted window",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.0931
+          "elapsed": 0.3059
         },
         {
-          "id": "rl_sixth_request_rejected",
+          "id": "capacity_zero",
           "category": "boundary",
-          "description": "Sixth request within the same 60-second window is strictly denied",
-          "status": "passed",
-          "elapsed": 0.0765
-        },
-        {
-          "id": "rl_boundary_burst_attack",
-          "category": "boundary",
-          "description": "Fixed-window counter flaw test: prevents boundary-burst doubling across interval edges",
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
           "status": "failed",
-          "exit_code": 2,
-          "stderr": "",
-          "elapsed": 0.0761
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpk7jb84rf\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.2835
         },
         {
-          "id": "rl_window_expiry_allows_new",
+          "id": "eviction",
           "category": "basic",
-          "description": "Requests after the rolling window expires are permitted again",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.0731
+          "elapsed": 0.1245
         },
         {
-          "id": "rl_exact_expiration_boundary",
+          "id": "overwrite",
           "category": "edge",
-          "description": "Request exactly at timestamp - window_seconds boundary is expired",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.0748
+          "elapsed": 0.2243
         },
         {
-          "id": "rl_multi_user_isolation",
-          "category": "basic",
-          "description": "Requests from different users are tracked independently",
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
           "status": "passed",
-          "elapsed": 0.0686
+          "elapsed": 0.2408
         },
         {
-          "id": "rl_invalid_inputs",
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.1854
+        },
+        {
+          "id": "not_found",
           "category": "invalid_input",
-          "description": "Graceful handling of empty/None user_id and invalid timestamp without crash",
-          "status": "failed",
-          "exit_code": 2,
-          "stderr": "",
-          "elapsed": 0.0748
-        },
-        {
-          "id": "rl_zero_capacity",
-          "category": "boundary",
-          "description": "RateLimiter initialized with max_requests=0 rejects all requests",
+          "description": "Queries for nonexistent keys consistently return -1",
           "status": "passed",
-          "elapsed": 0.0806
+          "elapsed": 0.1182
         },
         {
-          "id": "rl_remaining_tokens_query",
-          "category": "edge",
-          "description": "Accurately reports remaining available tokens per user",
-          "status": "passed",
-          "elapsed": 0.0702
-        },
-        {
-          "id": "rl_high_throughput_perf",
+          "id": "perf_100k",
           "category": "performance",
           "status": "passed",
-          "elapsed": 0.0264
+          "elapsed": 0.0929
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpk7jb84rf\\solution.py\", line 18, in put\n    hash(key)  # Check if the key is hashable\n    ~~~~^^^^^\nTypeError: unhashable",
+          "elapsed": 0.2018
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 0.1652
         }
       ]
     },
     "critique": {
-      "failure_type": "BoundaryBurstVulnerability",
-      "severity": "CRITICAL",
-      "root_cause": "The rate limiter employs fixed time-slice windowing. When requests cluster near interval boundaries (such as end of minute one and start of minute two), clients can execute twice the permitted quota within a fraction of the window.",
-      "fix_instruction": "Replace fixed window counters with a continuous sliding window algorithm, such as sliding timestamp logs or double-ended queues. Store timestamps per user and prune entries older than the current timestamp minus window duration.",
+      "failure_type": "IMPLEMENTATION_ERROR",
+      "severity": "HIGH",
+      "root_cause": "The LRUCache implementation fails to handle cases where the capacity is zero and improperly manages unhashable keys.",
+      "fix_instruction": "Modify the put method to check if the capacity is zero and raise an error if an attempt is made to add an item. Additionally, ensure that unhashable keys are correctly rejected with a ValueError.",
       "failed_tests": [
-        "rl_boundary_burst_attack",
-        "rl_invalid_inputs"
+        "capacity_zero",
+        "unhashable"
       ]
     }
   },
   "v2": {
-    "code": "\"\"\"RateLimiter V2: Sliding window implementation.\nAddresses boundary bursts with timestamp log, but fails boundary edge cases and invalid inputs.\n\"\"\"\nimport time\n\n\nclass RateLimiter:\n    \"\"\"Sliding window log rate limiter with basic pruning.\"\"\"\n\n    def __init__(self, max_requests: int = 5, window_seconds: float = 60.0):\n        self.max_requests = max_requests\n        self.window_seconds = window_seconds\n        self.requests = {}\n\n    def allow_request(self, user_id: str, timestamp: float = None) -> bool:\n        if timestamp is None:\n            timestamp = time.time()\n        if user_id not in self.requests:\n            self.requests[user_id] = []\n\n        # Bug: Strict < retains items at the exact cutoff boundary instead of expiring them\n        cutoff = timestamp - self.window_seconds\n        self.requests[user_id] = [t for t in self.requests[user_id] if t > cutoff]\n\n        if len(self.requests[user_id]) < self.max_requests:\n            self.requests[user_id].append(timestamp)\n            return True\n        return False\n\n    def get_remaining_tokens(self, user_id: str, timestamp: float = None) -> int:\n        if timestamp is None:\n            timestamp = time.time()\n        if user_id not in self.requests:\n            return self.max_requests\n        cutoff = timestamp - self.window_seconds\n        valid = [t for t in self.requests[user_id] if t > cutoff]\n        return max(0, self.max_requests - len(valid))\n",
+    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        if capacity < 0:\n            raise ValueError(\"Capacity must be non-negative\")\n        self.capacity = capacity\n        self.cache = OrderedDict()\n\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        else:\n            # Move the key to the end to show that it was recently used\n            self.cache.move_to_end(key)\n            return self.cache[key]\n\n    def put(self, key, value):\n        try:\n            hash(key)  # Check if the key is hashable\n        except TypeError:\n            raise ValueError(\"Key must be hashable\")\n\n        if self.capacity == 0:\n            raise ValueError(\"Cannot put items into a cache with zero capacity\")\n\n        if key in self.cache:\n            # Move the key to the end to show that it was recently used\n            self.cache.move_to_end(key)\n        elif len(self.cache) >= self.capacity:\n            # Pop the first item (least recently used)\n            self.cache.popitem(last=False)\n\n        self.cache[key] = value",
     "eval": {
-      "passed": 9,
+      "passed": 8,
       "total": 10,
       "failed_tests": [
-        "rl_invalid_inputs"
+        "capacity_zero",
+        "unhashable"
       ],
-      "correctness": 90.0,
+      "correctness": 80.0,
       "efficiency": 100.0,
       "safety": 50.0,
-      "quality": 100.0,
-      "final_score": 89.0,
-      "trace_hash_hex": "87e2c2e6b6f3b63d1ede3209eb7f82f8fdfba4a7faaf6928fef7cdd0d8443f6b",
-      "trace_hash_zk": "240089402946199150136036383495147092824007214537255483485692177827633841215",
+      "quality": 65.0,
+      "final_score": 79.5,
+      "trace_hash_hex": "87172aa6b90422759e11b8847b10a63d1f639434b9aa1f607933c0c50702f7e3",
+      "trace_hash_zk": "238684243786769734601934024506820836565995047011675230310285520152251794167",
       "test_details": [
         {
-          "id": "rl_basic_allowance",
+          "id": "basic",
           "category": "basic",
-          "description": "Allows up to max_requests (5) requests within the permitted window",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.0954
+          "elapsed": 0.2634
         },
         {
-          "id": "rl_sixth_request_rejected",
+          "id": "capacity_zero",
           "category": "boundary",
-          "description": "Sixth request within the same 60-second window is strictly denied",
-          "status": "passed",
-          "elapsed": 0.0717
-        },
-        {
-          "id": "rl_boundary_burst_attack",
-          "category": "boundary",
-          "description": "Fixed-window counter flaw test: prevents boundary-burst doubling across interval edges",
-          "status": "passed",
-          "elapsed": 0.0688
-        },
-        {
-          "id": "rl_window_expiry_allows_new",
-          "category": "basic",
-          "description": "Requests after the rolling window expires are permitted again",
-          "status": "passed",
-          "elapsed": 0.0677
-        },
-        {
-          "id": "rl_exact_expiration_boundary",
-          "category": "edge",
-          "description": "Request exactly at timestamp - window_seconds boundary is expired",
-          "status": "passed",
-          "elapsed": 0.0736
-        },
-        {
-          "id": "rl_multi_user_isolation",
-          "category": "basic",
-          "description": "Requests from different users are tracked independently",
-          "status": "passed",
-          "elapsed": 0.0691
-        },
-        {
-          "id": "rl_invalid_inputs",
-          "category": "invalid_input",
-          "description": "Graceful handling of empty/None user_id and invalid timestamp without crash",
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
           "status": "failed",
-          "exit_code": 2,
-          "stderr": "",
-          "elapsed": 0.0697
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpqa6kw_s7\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.2842
         },
         {
-          "id": "rl_zero_capacity",
-          "category": "boundary",
-          "description": "RateLimiter initialized with max_requests=0 rejects all requests",
+          "id": "eviction",
+          "category": "basic",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.0713
+          "elapsed": 0.1264
         },
         {
-          "id": "rl_remaining_tokens_query",
+          "id": "overwrite",
           "category": "edge",
-          "description": "Accurately reports remaining available tokens per user",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.0696
+          "elapsed": 0.1041
         },
         {
-          "id": "rl_high_throughput_perf",
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
+          "status": "passed",
+          "elapsed": 0.1653
+        },
+        {
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.1141
+        },
+        {
+          "id": "not_found",
+          "category": "invalid_input",
+          "description": "Queries for nonexistent keys consistently return -1",
+          "status": "passed",
+          "elapsed": 0.1439
+        },
+        {
+          "id": "perf_100k",
           "category": "performance",
           "status": "passed",
-          "elapsed": 0.0379
+          "elapsed": 0.089
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpqa6kw_s7\\solution.py\", line 20, in put\n    hash(key)  # Check if the key is hashable\n    ~~~~^^^^^\nTypeError: unhashable",
+          "elapsed": 0.2473
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 0.2469
         }
       ]
     },
     "critique": {
-      "failure_type": "BoundaryPruningOffByOneAndInvalidInput",
-      "severity": "HIGH",
-      "root_cause": "The sliding window logic retains timestamps located precisely at the expiration cutoff boundary (timestamp minus window seconds), and crashes when presented with empty or non-numeric identifiers.",
-      "fix_instruction": "Ensure expiration checks prune all timestamps less than or equal to the cutoff boundary. Add defensive validation for user identifiers and non-numeric or negative timestamps.",
+      "failure_type": "ARCHITECTURAL",
+      "severity": "CRITICAL",
+      "root_cause": "The LRUCache implementation fails to handle zero capacity and unhashable keys correctly. When the cache capacity is set to zero, the put method incorrectly allows operations, leading to inconsistencies. Additionally, the use of ValueError for unhashable keys violates expected exception handling.",
+      "fix_instruction": "Modify the __init__ method to disallow zero capacity and raise an error. In the put method, raise TypeError instead of ValueError for unhashable keys.",
       "failed_tests": [
-        "rl_invalid_inputs"
+        "capacity_zero",
+        "unhashable"
       ]
     }
   },
   "v3": {
-    "code": "\"\"\"RateLimiter V3: Production-grade sliding window with collections.deque.\nRobust edge cases, strict boundary expiration, defensive type validation, and high throughput.\n\"\"\"\nfrom __future__ import annotations\n\nimport time\nfrom collections import deque\nfrom typing import Any, Dict, Optional\n\n\nclass RateLimiter:\n    \"\"\"Industrial-grade, rolling-window rate limiter.\n\n    Tracks request timestamps within a continuous rolling window using double-ended queues.\n    Guarantees strict quota adherence without boundary burst vulnerabilities.\n    \"\"\"\n\n    def __init__(self, max_requests: int = 5, window_seconds: float = 60.0) -> None:\n        \"\"\"Initialize the rate limiter with quota and window limits.\n\n        Args:\n            max_requests: Maximum requests allowed in the rolling window.\n            window_seconds: Window duration in seconds.\n        \"\"\"\n        self.max_requests = max_requests if max_requests > 0 else 0\n        self.window_seconds = window_seconds if window_seconds > 0 else 0.0\n        self.user_timestamps: Dict[str, deque[float]] = {}\n\n    def _sanitize(self, user_id: Any, timestamp: Any) -> Optional[tuple[str, float]]:\n        \"\"\"Validate and sanitize user identity and timestamp inputs.\"\"\"\n        if not user_id or not isinstance(user_id, str):\n            return None\n        if timestamp is None:\n            ts = time.time()\n        else:\n            try:\n                ts = float(timestamp)\n            except (ValueError, TypeError):\n                return None\n        if ts < 0:\n            return None\n        return user_id, ts\n\n    def allow_request(self, user_id: str, timestamp: Optional[float] = None) -> bool:\n        \"\"\"Determine whether an incoming request from user_id should be permitted.\n\n        Args:\n            user_id: Identifier of the requesting client.\n            timestamp: Optional epoch timestamp of the request.\n\n        Returns:\n            True if request is permitted under the current quota, False otherwise.\n        \"\"\"\n        if self.max_requests <= 0 or self.window_seconds <= 0:\n            return False\n\n        sanitized = self._sanitize(user_id, timestamp)\n        if sanitized is None:\n            return False\n        uid, ts = sanitized\n\n        if uid not in self.user_timestamps:\n            self.user_timestamps[uid] = deque()\n\n        q = self.user_timestamps[uid]\n        cutoff = ts - self.window_seconds\n\n        # Prune all entries strictly older than or equal to expiration boundary\n        while q and q[0] <= cutoff:\n            q.popleft()\n\n        if len(q) < self.max_requests:\n            q.append(ts)\n            return True\n        return False\n\n    def get_remaining_tokens(self, user_id: str, timestamp: Optional[float] = None) -> int:\n        \"\"\"Return the count of remaining available request tokens for user_id.\n\n        Args:\n            user_id: Identifier of the requesting client.\n            timestamp: Optional reference timestamp.\n\n        Returns:\n            Integer token count in [0, max_requests].\n        \"\"\"\n        if self.max_requests <= 0 or self.window_seconds <= 0:\n            return 0\n\n        sanitized = self._sanitize(user_id, timestamp)\n        if sanitized is None:\n            return 0\n        uid, ts = sanitized\n\n        if uid not in self.user_timestamps:\n            return self.max_requests\n\n        q = self.user_timestamps[uid]\n        cutoff = ts - self.window_seconds\n        while q and q[0] <= cutoff:\n            q.popleft()\n\n        return max(0, self.max_requests - len(q))\n",
+    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int):\n        if capacity <= 0:\n            raise ValueError(\"Capacity must be greater than zero.\")\n        self.cache = OrderedDict()\n        self.capacity = capacity\n\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        else:\n            self.cache.move_to_end(key)\n            return self.cache[key]\n\n    def put(self, key, value):\n        try:\n            hash(key)  # Check if the key is hashable\n        except TypeError:\n            raise TypeError(\"Key must be hashable.\")\n        \n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)",
     "eval": {
-      "passed": 10,
+      "passed": 8,
       "total": 10,
-      "failed_tests": [],
-      "correctness": 100.0,
+      "failed_tests": [
+        "capacity_zero",
+        "unhashable"
+      ],
+      "correctness": 80.0,
       "efficiency": 100.0,
-      "safety": 100.0,
-      "quality": 100.0,
-      "final_score": 100.0,
-      "trace_hash_hex": "c6be7c8b530b813489ee47e40c1f6c98d62f482a9040afff8aca052367318f2e",
-      "trace_hash_zk": "351150408337968279903162172140351739747795151664282229013545978710733566351",
+      "safety": 50.0,
+      "quality": 65.0,
+      "final_score": 79.5,
+      "trace_hash_hex": "c0501ffac06527bc46e4e868156e1fe387c35eb5395423e4469a2cf474bc2980",
+      "trace_hash_zk": "339787638310759404109510837396457673756825107472196408566004474463816825897",
       "test_details": [
         {
-          "id": "rl_basic_allowance",
+          "id": "basic",
           "category": "basic",
-          "description": "Allows up to max_requests (5) requests within the permitted window",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
           "status": "passed",
-          "elapsed": 0.0939
+          "elapsed": 0.3324
         },
         {
-          "id": "rl_sixth_request_rejected",
+          "id": "capacity_zero",
           "category": "boundary",
-          "description": "Sixth request within the same 60-second window is strictly denied",
-          "status": "passed",
-          "elapsed": 0.0825
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmp1d_zcj7k\\test_runner.py\", line 6, in <module>\n    cache = LRUCache(cap)\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmp1d_",
+          "elapsed": 0.1956
         },
         {
-          "id": "rl_boundary_burst_attack",
-          "category": "boundary",
-          "description": "Fixed-window counter flaw test: prevents boundary-burst doubling across interval edges",
-          "status": "passed",
-          "elapsed": 0.075
-        },
-        {
-          "id": "rl_window_expiry_allows_new",
+          "id": "eviction",
           "category": "basic",
-          "description": "Requests after the rolling window expires are permitted again",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
           "status": "passed",
-          "elapsed": 0.0781
+          "elapsed": 0.1413
         },
         {
-          "id": "rl_exact_expiration_boundary",
+          "id": "overwrite",
           "category": "edge",
-          "description": "Request exactly at timestamp - window_seconds boundary is expired",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
           "status": "passed",
-          "elapsed": 0.0786
+          "elapsed": 0.1498
         },
         {
-          "id": "rl_multi_user_isolation",
-          "category": "basic",
-          "description": "Requests from different users are tracked independently",
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
           "status": "passed",
-          "elapsed": 0.0773
+          "elapsed": 0.1931
         },
         {
-          "id": "rl_invalid_inputs",
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.1657
+        },
+        {
+          "id": "not_found",
           "category": "invalid_input",
-          "description": "Graceful handling of empty/None user_id and invalid timestamp without crash",
+          "description": "Queries for nonexistent keys consistently return -1",
           "status": "passed",
-          "elapsed": 0.0796
+          "elapsed": 0.3347
         },
         {
-          "id": "rl_zero_capacity",
-          "category": "boundary",
-          "description": "RateLimiter initialized with max_requests=0 rejects all requests",
-          "status": "passed",
-          "elapsed": 0.0771
-        },
-        {
-          "id": "rl_remaining_tokens_query",
-          "category": "edge",
-          "description": "Accurately reports remaining available tokens per user",
-          "status": "passed",
-          "elapsed": 0.0762
-        },
-        {
-          "id": "rl_high_throughput_perf",
+          "id": "perf_100k",
           "category": "performance",
           "status": "passed",
-          "elapsed": 0.0349
+          "elapsed": 0.1112
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmp1d_zcj7k\\solution.py\", line 19, in put\n    hash(key)  # Check if the key is hashable\n    ~~~~^^^^^\nTypeError: unhashable",
+          "elapsed": 0.791
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 1.0038
         }
       ]
     },
     "critique": {
-      "failure_type": "None",
-      "severity": "LOW",
-      "root_cause": "None. All rate limiting boundaries, concurrency tests, and input safeguards pass.",
-      "fix_instruction": "Maintain current architecture; no further revisions required.",
-      "failed_tests": []
+      "failure_type": "Initialization and Input Validation",
+      "severity": "HIGH",
+      "root_cause": "The constructor raises an error for zero capacity, and the put method may not handle unhashable keys as expected.",
+      "fix_instruction": "Modify the constructor to allow zero capacity and ensure the put method correctly raises a TypeError for unhashable keys.",
+      "failed_tests": [
+        "capacity_zero",
+        "unhashable"
+      ]
     }
   }
 }
