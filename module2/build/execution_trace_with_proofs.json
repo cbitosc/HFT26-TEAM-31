@@ -1,0 +1,159 @@
+{
+  "task_id": "lru_cache_01",
+  "v1": {
+    "code": "class LRUCache:\n    \"\"\"V1: Naive dictionary implementation. Fails capacity <= 0, unhashable keys, and order refresh.\"\"\"\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = {}\n\n    def get(self, key):\n        return self.cache.get(key, -1)\n\n    def put(self, key, value):\n        self.cache[key] = value\n",
+    "eval": {
+      "passed": 3,
+      "total": 10,
+      "final_score": 52,
+      "trace_hash_hex": "0x8f936a44ef2dd718cc69ef7c270280a718d1f98239732b8c129fe78000ffd98a",
+      "trace_hash_zk": "253676551990262283133735446607769182679600870803727135197945648692968095705",
+      "logs": [
+        "PASS: test_basic",
+        "FAIL: test_capacity_zero (AssertionError: )",
+        "FAIL: test_eviction (AssertionError: )",
+        "FAIL: test_overwrite (AssertionError: )",
+        "FAIL: test_order_after_get (AssertionError: )",
+        "FAIL: test_single_cap (AssertionError: )",
+        "PASS: test_not_found",
+        "PASS: test_perf_100k",
+        "FAIL: test_unhashable (TypeError: unhashable type: 'list')",
+        "FAIL: test_many_puts (AssertionError: )"
+      ]
+    }
+  },
+  "v2": {
+    "code": "class LRUCache:\n    \"\"\"V2: List-tracked order. Handles capacity <= 0 and eviction order, but lacks unhashable key handling.\"\"\"\n    def __init__(self, capacity: int):\n        self.capacity = max(0, capacity)\n        self.cache = {}\n        self.order = []\n\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.order.remove(key)\n        self.order.append(key)\n        return self.cache[key]\n\n    def put(self, key, value):\n        if self.capacity <= 0:\n            return\n        if key in self.cache:\n            self.order.remove(key)\n        elif len(self.cache) >= self.capacity:\n            evicted = self.order.pop(0)\n            del self.cache[evicted]\n        self.cache[key] = value\n        self.order.append(key)\n",
+    "eval": {
+      "passed": 9,
+      "total": 10,
+      "final_score": 86,
+      "trace_hash_hex": "0xc91f21b5171494b76961fc49e59f8f2ed6b39e7d274268064ea5f47d541ecae3",
+      "trace_hash_zk": "355351122906465289177396849563575929372618619862151384361107131205804105418",
+      "logs": [
+        "PASS: test_basic",
+        "PASS: test_capacity_zero",
+        "PASS: test_eviction",
+        "PASS: test_overwrite",
+        "PASS: test_order_after_get",
+        "PASS: test_single_cap",
+        "PASS: test_not_found",
+        "PASS: test_perf_100k",
+        "FAIL: test_unhashable (TypeError: unhashable type: 'list')",
+        "PASS: test_many_puts"
+      ]
+    }
+  },
+  "v3": {
+    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    \"\"\"V3: Production OrderedDict with unhashable key serialization and true O(1) ops.\"\"\"\n    def __init__(self, capacity: int):\n        self.capacity = max(0, capacity)\n        self.cache = OrderedDict()\n\n    def _make_hashable(self, key):\n        if isinstance(key, (list, dict, set)):\n            return f\"__unhashable_repr__{repr(key)}\"\n        return key\n\n    def get(self, key):\n        h_key = self._make_hashable(key)\n        if h_key not in self.cache:\n            return -1\n        self.cache.move_to_end(h_key)\n        return self.cache[h_key]\n\n    def put(self, key, value):\n        if self.capacity <= 0:\n            return\n        h_key = self._make_hashable(key)\n        if h_key in self.cache:\n            self.cache.move_to_end(h_key)\n        elif len(self.cache) >= self.capacity:\n            self.cache.popitem(last=False)\n        self.cache[h_key] = value\n",
+    "eval": {
+      "passed": 10,
+      "total": 10,
+      "final_score": 100,
+      "trace_hash_hex": "0x0ac386f0b7a7452a532daed1096146f831f8550fb6f30217b3c49c96bd6560cf",
+      "trace_hash_zk": "19017949168762028182500130840153872972453695216037167298171155777060693344",
+      "logs": [
+        "PASS: test_basic",
+        "PASS: test_capacity_zero",
+        "PASS: test_eviction",
+        "PASS: test_overwrite",
+        "PASS: test_order_after_get",
+        "PASS: test_single_cap",
+        "PASS: test_not_found",
+        "PASS: test_perf_100k",
+        "PASS: test_unhashable",
+        "PASS: test_many_puts"
+      ]
+    }
+  },
+  "zk_inputs": {
+    "score_v1": 52,
+    "log_hash_v1": "253676551990262283133735446607769182679600870803727135197945648692968095705",
+    "hash_v1_hex": "0x8f936a44ef2dd718cc69ef7c270280a718d1f98239732b8c129fe78000ffd98a",
+    "score_v1_full": 52,
+    "score_v2": 86,
+    "log_hash_v2": "355351122906465289177396849563575929372618619862151384361107131205804105418",
+    "hash_v2_hex": "0xc91f21b5171494b76961fc49e59f8f2ed6b39e7d274268064ea5f47d541ecae3",
+    "score_v2_full": 86,
+    "score_v3": 100,
+    "log_hash_v3": "19017949168762028182500130840153872972453695216037167298171155777060693344",
+    "hash_v3_hex": "0x0ac386f0b7a7452a532daed1096146f831f8550fb6f30217b3c49c96bd6560cf",
+    "score_v3_full": 100
+  },
+  "zk_proofs": {
+    "v1_v2": {
+      "proof": {
+        "pi_a": [
+          "2493144973117759214167346402703284491698972254657350320726774038681218382631",
+          "16853441122738144825671469603148713006701893931216176909661454329363465137054",
+          "1"
+        ],
+        "pi_b": [
+          [
+            "7444423234836437992707705619243309011687332865868005052048086060963256893960",
+            "7705482874756853231184489407612460818045993395364647314681002711325510102140"
+          ],
+          [
+            "14154425873234931745033844695868403351331913126842202086318954163148268086525",
+            "3886594406817711557040000888970691946260501904153594574672579786513141135995"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ],
+        "pi_c": [
+          "7003751785870999406561889086423497709439768286666305045256657673881297568310",
+          "5468173717197633971247428357718714268884879265908451921947671537756662973309",
+          "1"
+        ],
+        "protocol": "groth16",
+        "curve": "bn128"
+      },
+      "public": [
+        "34",
+        "1",
+        "253676551990262283133735446607769182679600870803727135197945648692968095705",
+        "355351122906465289177396849563575929372618619862151384361107131205804105418"
+      ],
+      "verified": true
+    },
+    "v2_v3": {
+      "proof": {
+        "pi_a": [
+          "8326959501781502037877339735779812490288662626449699575523221199190648897437",
+          "1770550238879482500893589698305187869645331693115192256784839833146883694502",
+          "1"
+        ],
+        "pi_b": [
+          [
+            "3143141294624763011751262699892044498498661637994507506870623901160141532379",
+            "20039364891586786913355303938062808382227765548460722378172834323410146803499"
+          ],
+          [
+            "131029024764479032619233666146795391920326593458057977766726407560338694070",
+            "16361569273087589802529490117778382724108745746896498970395855785333893975512"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ],
+        "pi_c": [
+          "13849298455191714860622058649687816983200484930481628473589898370759563557845",
+          "12259053624739015519329946450986802989473290193889226962574476368560626604094",
+          "1"
+        ],
+        "protocol": "groth16",
+        "curve": "bn128"
+      },
+      "public": [
+        "14",
+        "1",
+        "355351122906465289177396849563575929372618619862151384361107131205804105418",
+        "19017949168762028182500130840153872972453695216037167298171155777060693344"
+      ],
+      "verified": true
+    }
+  }
+}
