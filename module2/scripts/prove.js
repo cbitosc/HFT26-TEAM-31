@@ -48,6 +48,45 @@ async function main() {
         process.exit(1);
     }
 
+    if (!fs.existsSync(inputsDir)) {
+        fs.mkdirSync(inputsDir, { recursive: true });
+    }
+
+    // Refresh inputs from execution_trace.json if available
+    const traceCandidates = [
+        path.join(REPO_ROOT, 'module1', 'execution_trace.json'),
+        path.join(MODULE2_ROOT, '..', 'module1', 'execution_trace.json'),
+        path.join(MODULE2_ROOT, '..', 'agent', 'execution_trace.json'),
+        path.join(REPO_ROOT, 'agent', 'execution_trace.json'),
+        path.join(MODULE2_ROOT, '..', 'execution_trace.json'),
+        path.join(REPO_ROOT, 'execution_trace.json')
+    ];
+    const tracePath = traceCandidates.find(p => fs.existsSync(p));
+    let traceData = null;
+
+    if (tracePath) {
+        traceData = JSON.parse(fs.readFileSync(tracePath, 'utf8'));
+        if (traceData && traceData.zk_inputs) {
+            const { score_v1, score_v2, score_v3, log_hash_v1, log_hash_v2, log_hash_v3 } = traceData.zk_inputs;
+            console.log(`[+] Found execution trace at: ${tracePath}`);
+            console.log(`[+] Syncing ZK inputs: V1=${score_v1}, V2=${score_v2}, V3=${score_v3}`);
+
+            fs.writeFileSync(path.join(inputsDir, 'input_v1_v2.json'), JSON.stringify({
+                s1: Number(score_v1),
+                s2: Number(score_v2),
+                log_hash_v1: String(log_hash_v1),
+                log_hash_v2: String(log_hash_v2)
+            }, null, 2), 'utf8');
+
+            fs.writeFileSync(path.join(inputsDir, 'input_v2_v3.json'), JSON.stringify({
+                s1: Number(score_v2),
+                s2: Number(score_v3),
+                log_hash_v1: String(log_hash_v2),
+                log_hash_v2: String(log_hash_v3)
+            }, null, 2), 'utf8');
+        }
+    }
+
     // V1 -> V2
     console.log("\n[*] Proving V1 -> V2...");
     try {
@@ -71,15 +110,7 @@ async function main() {
     runCommand(`${snarkjsCli} groth16 verify build/verification_key.json build/public_v2_v3.json build/proof_v2_v3.json`);
 
     // Update execution_trace_with_proofs.json if trace exists
-    const traceCandidates = [
-        path.join(MODULE2_ROOT, '..', 'agent', 'execution_trace.json'),
-        path.join(REPO_ROOT, 'agent', 'execution_trace.json'),
-        path.join(MODULE2_ROOT, '..', 'execution_trace.json'),
-        path.join(REPO_ROOT, 'execution_trace.json')
-    ];
-    let tracePath = traceCandidates.find(p => fs.existsSync(p));
-    if (tracePath) {
-        const traceData = JSON.parse(fs.readFileSync(tracePath, 'utf8'));
+    if (traceData) {
         const proof_v1_v2 = JSON.parse(fs.readFileSync(path.join(buildDir, 'proof_v1_v2.json'), 'utf8'));
         const public_v1_v2 = JSON.parse(fs.readFileSync(path.join(buildDir, 'public_v1_v2.json'), 'utf8'));
         const proof_v2_v3 = JSON.parse(fs.readFileSync(path.join(buildDir, 'proof_v2_v3.json'), 'utf8'));
