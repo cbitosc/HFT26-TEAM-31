@@ -1,0 +1,1153 @@
+{
+  "task_id": "lru_cache_01",
+  "task_name": "Least Recently Used (LRU) Cache",
+  "programming_language": "python",
+  "iterations_count": 3,
+  "validated_tests_count": 10,
+  "test_generation": {
+    "task_id": "lru_cache_01",
+    "total_generated": 12,
+    "validated_count": 10,
+    "rejected_count": 2,
+    "category_breakdown": {
+      "basic": 2,
+      "boundary": 3,
+      "edge": 1,
+      "invalid_input": 2,
+      "performance": 1,
+      "regression": 1
+    },
+    "rejected_details": [
+      {
+        "test_id": "invalid_ambiguous_spec",
+        "category": "invalid_input",
+        "reason": "Oracle output mismatch for get(user_x): oracle expected -1, test claimed 1.0"
+      },
+      {
+        "test_id": "malformed_empty_ops",
+        "category": "boundary",
+        "reason": "Test has no executable operations list ('ops')"
+      }
+    ],
+    "validated_tests": [
+      {
+        "id": "basic",
+        "description": "Standard LRU insertion, retrieval, and eviction sequence",
+        "category": "basic",
+        "capacity": 2,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "get",
+            1,
+            10
+          ],
+          [
+            "get",
+            2,
+            20
+          ],
+          [
+            "put",
+            3,
+            30
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "get",
+            2,
+            20
+          ],
+          [
+            "get",
+            3,
+            30
+          ]
+        ]
+      },
+      {
+        "id": "capacity_zero",
+        "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
+        "category": "boundary",
+        "capacity": 0,
+        "ops": [
+          [
+            "put",
+            1,
+            1
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "put",
+            2,
+            2
+          ],
+          [
+            "get",
+            2,
+            -1
+          ]
+        ]
+      },
+      {
+        "id": "eviction",
+        "description": "Deterministic eviction of oldest item upon reaching capacity",
+        "category": "basic",
+        "capacity": 2,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "put",
+            3,
+            30
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "get",
+            2,
+            20
+          ],
+          [
+            "get",
+            3,
+            30
+          ]
+        ]
+      },
+      {
+        "id": "overwrite",
+        "description": "Overwriting an existing key updates value without altering valid capacity",
+        "category": "edge",
+        "capacity": 2,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "put",
+            1,
+            15
+          ],
+          [
+            "get",
+            1,
+            15
+          ],
+          [
+            "get",
+            2,
+            20
+          ]
+        ]
+      },
+      {
+        "id": "order_after_get",
+        "description": "Ensures get(key) updates recency so the other key is evicted first",
+        "category": "boundary",
+        "capacity": 2,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "get",
+            1,
+            10
+          ],
+          [
+            "put",
+            3,
+            30
+          ],
+          [
+            "get",
+            2,
+            -1
+          ],
+          [
+            "get",
+            1,
+            10
+          ],
+          [
+            "get",
+            3,
+            30
+          ]
+        ]
+      },
+      {
+        "id": "single_cap",
+        "description": "Capacity of 1: each new insert immediately evicts the previous item",
+        "category": "boundary",
+        "capacity": 1,
+        "ops": [
+          [
+            "put",
+            1,
+            10
+          ],
+          [
+            "get",
+            1,
+            10
+          ],
+          [
+            "put",
+            2,
+            20
+          ],
+          [
+            "get",
+            1,
+            -1
+          ],
+          [
+            "get",
+            2,
+            20
+          ]
+        ]
+      },
+      {
+        "id": "not_found",
+        "description": "Queries for nonexistent keys consistently return -1",
+        "category": "invalid_input",
+        "capacity": 2,
+        "ops": [
+          [
+            "get",
+            99,
+            -1
+          ],
+          [
+            "put",
+            1,
+            1
+          ],
+          [
+            "get",
+            2,
+            -1
+          ],
+          [
+            "get",
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "id": "perf_100k",
+        "description": "High-throughput O(1) performance stress test: 100k operations in <0.85s",
+        "category": "performance",
+        "perf": true,
+        "ops_count": 100000,
+        "capacity": 1000
+      },
+      {
+        "id": "unhashable",
+        "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+        "category": "invalid_input",
+        "capacity": 2,
+        "ops": [
+          [
+            "put",
+            [
+              1,
+              2
+            ],
+            1,
+            "no_crash"
+          ],
+          [
+            "get",
+            [
+              1,
+              2
+            ],
+            -1
+          ]
+        ]
+      },
+      {
+        "id": "many_puts",
+        "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+        "category": "regression",
+        "capacity": 50,
+        "ops": [
+          [
+            "put",
+            0,
+            0
+          ],
+          [
+            "put",
+            1,
+            1
+          ],
+          [
+            "put",
+            2,
+            2
+          ],
+          [
+            "put",
+            3,
+            3
+          ],
+          [
+            "put",
+            4,
+            4
+          ],
+          [
+            "put",
+            5,
+            5
+          ],
+          [
+            "put",
+            6,
+            6
+          ],
+          [
+            "put",
+            7,
+            7
+          ],
+          [
+            "put",
+            8,
+            8
+          ],
+          [
+            "put",
+            9,
+            9
+          ],
+          [
+            "put",
+            10,
+            10
+          ],
+          [
+            "put",
+            11,
+            11
+          ],
+          [
+            "put",
+            12,
+            12
+          ],
+          [
+            "put",
+            13,
+            13
+          ],
+          [
+            "put",
+            14,
+            14
+          ],
+          [
+            "put",
+            15,
+            15
+          ],
+          [
+            "put",
+            16,
+            16
+          ],
+          [
+            "put",
+            17,
+            17
+          ],
+          [
+            "put",
+            18,
+            18
+          ],
+          [
+            "put",
+            19,
+            19
+          ],
+          [
+            "put",
+            20,
+            20
+          ],
+          [
+            "put",
+            21,
+            21
+          ],
+          [
+            "put",
+            22,
+            22
+          ],
+          [
+            "put",
+            23,
+            23
+          ],
+          [
+            "put",
+            24,
+            24
+          ],
+          [
+            "put",
+            25,
+            25
+          ],
+          [
+            "put",
+            26,
+            26
+          ],
+          [
+            "put",
+            27,
+            27
+          ],
+          [
+            "put",
+            28,
+            28
+          ],
+          [
+            "put",
+            29,
+            29
+          ],
+          [
+            "put",
+            30,
+            30
+          ],
+          [
+            "put",
+            31,
+            31
+          ],
+          [
+            "put",
+            32,
+            32
+          ],
+          [
+            "put",
+            33,
+            33
+          ],
+          [
+            "put",
+            34,
+            34
+          ],
+          [
+            "put",
+            35,
+            35
+          ],
+          [
+            "put",
+            36,
+            36
+          ],
+          [
+            "put",
+            37,
+            37
+          ],
+          [
+            "put",
+            38,
+            38
+          ],
+          [
+            "put",
+            39,
+            39
+          ],
+          [
+            "put",
+            40,
+            40
+          ],
+          [
+            "put",
+            41,
+            41
+          ],
+          [
+            "put",
+            42,
+            42
+          ],
+          [
+            "put",
+            43,
+            43
+          ],
+          [
+            "put",
+            44,
+            44
+          ],
+          [
+            "put",
+            45,
+            45
+          ],
+          [
+            "put",
+            46,
+            46
+          ],
+          [
+            "put",
+            47,
+            47
+          ],
+          [
+            "put",
+            48,
+            48
+          ],
+          [
+            "put",
+            49,
+            49
+          ],
+          [
+            "put",
+            50,
+            50
+          ],
+          [
+            "put",
+            51,
+            51
+          ],
+          [
+            "put",
+            52,
+            52
+          ],
+          [
+            "put",
+            53,
+            53
+          ],
+          [
+            "put",
+            54,
+            54
+          ],
+          [
+            "put",
+            55,
+            55
+          ],
+          [
+            "put",
+            56,
+            56
+          ],
+          [
+            "put",
+            57,
+            57
+          ],
+          [
+            "put",
+            58,
+            58
+          ],
+          [
+            "put",
+            59,
+            59
+          ],
+          [
+            "put",
+            60,
+            60
+          ],
+          [
+            "put",
+            61,
+            61
+          ],
+          [
+            "put",
+            62,
+            62
+          ],
+          [
+            "put",
+            63,
+            63
+          ],
+          [
+            "put",
+            64,
+            64
+          ],
+          [
+            "put",
+            65,
+            65
+          ],
+          [
+            "put",
+            66,
+            66
+          ],
+          [
+            "put",
+            67,
+            67
+          ],
+          [
+            "put",
+            68,
+            68
+          ],
+          [
+            "put",
+            69,
+            69
+          ],
+          [
+            "put",
+            70,
+            70
+          ],
+          [
+            "put",
+            71,
+            71
+          ],
+          [
+            "put",
+            72,
+            72
+          ],
+          [
+            "put",
+            73,
+            73
+          ],
+          [
+            "put",
+            74,
+            74
+          ],
+          [
+            "put",
+            75,
+            75
+          ],
+          [
+            "put",
+            76,
+            76
+          ],
+          [
+            "put",
+            77,
+            77
+          ],
+          [
+            "put",
+            78,
+            78
+          ],
+          [
+            "put",
+            79,
+            79
+          ],
+          [
+            "put",
+            80,
+            80
+          ],
+          [
+            "put",
+            81,
+            81
+          ],
+          [
+            "put",
+            82,
+            82
+          ],
+          [
+            "put",
+            83,
+            83
+          ],
+          [
+            "put",
+            84,
+            84
+          ],
+          [
+            "put",
+            85,
+            85
+          ],
+          [
+            "put",
+            86,
+            86
+          ],
+          [
+            "put",
+            87,
+            87
+          ],
+          [
+            "put",
+            88,
+            88
+          ],
+          [
+            "put",
+            89,
+            89
+          ],
+          [
+            "put",
+            90,
+            90
+          ],
+          [
+            "put",
+            91,
+            91
+          ],
+          [
+            "put",
+            92,
+            92
+          ],
+          [
+            "put",
+            93,
+            93
+          ],
+          [
+            "put",
+            94,
+            94
+          ],
+          [
+            "put",
+            95,
+            95
+          ],
+          [
+            "put",
+            96,
+            96
+          ],
+          [
+            "put",
+            97,
+            97
+          ],
+          [
+            "put",
+            98,
+            98
+          ],
+          [
+            "put",
+            99,
+            99
+          ],
+          [
+            "get",
+            0,
+            -1
+          ]
+        ]
+      }
+    ]
+  },
+  "diffs": {
+    "diff_v1_v2": "--- v1.py\n+++ v2.py\n@@ -1,25 +1,28 @@\n-# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\n+from collections import OrderedDict\n+\n class LRUCache:\n+    \"\"\"\n+    Least Recently Used (LRU) Cache using collections.OrderedDict.\n+    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    \"\"\"\n     def __init__(self, capacity):\n-        self.cap = capacity\n-        self.cache = []\n+        self.capacity = capacity\n+        self.cache = OrderedDict()\n \n     def get(self, key):\n-        hash(key)\n-        for k, v in self.cache:\n-            if k == key:\n-                return v\n-        return -1\n+        if self.capacity <= 0:\n+            return -1\n+        if key not in self.cache:\n+            return -1\n+        self.cache.move_to_end(key)\n+        return self.cache[key]\n \n     def put(self, key, value):\n-        hash(key)\n-        for i, (k, v) in enumerate(self.cache):\n-            if k == key:\n-                self.cache[i] = (key, value)\n-                return\n-        self.cache.append((key, value))\n-        for _ in range(2000):\n-            sum([1 for _ in self.cache])\n-        if self.cap > 0 and len(self.cache) > self.cap:\n-            self.cache.pop(0)\n+        if self.capacity <= 0:\n+            return\n+        if key in self.cache:\n+            self.cache.move_to_end(key)\n+        self.cache[key] = value\n+        if len(self.cache) > self.capacity:\n+            self.cache.popitem(last=False)\n \n",
+    "diff_v2_v3": "--- v2.py\n+++ v3.py\n@@ -1,28 +1,94 @@\n-from collections import OrderedDict\n+\"\"\"\n+Production-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n+\"\"\"\n+from typing import Any, Optional\n+\n+\n+class Node:\n+    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n+    def __init__(self, key: Any = None, value: Any = None) -> None:\n+        self.key: Any = key\n+        self.value: Any = value\n+        self.prev: Optional['Node'] = None\n+        self.next: Optional['Node'] = None\n+\n \n class LRUCache:\n     \"\"\"\n-    Least Recently Used (LRU) Cache using collections.OrderedDict.\n-    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n+    Doubly Linked List for deterministic eviction order and strict type safety.\n     \"\"\"\n-    def __init__(self, capacity):\n-        self.capacity = capacity\n-        self.cache = OrderedDict()\n+    def __init__(self, capacity: int) -> None:\n+        self.capacity: int = capacity\n+        self.map: dict = {}\n+        self.head: Node = Node()\n+        self.tail: Node = Node()\n+        self.head.next = self.tail\n+        self.tail.prev = self.head\n \n-    def get(self, key):\n-        if self.capacity <= 0:\n+    def _remove(self, node: Node) -> None:\n+        \"\"\"Unlink node from doubly linked list.\"\"\"\n+        prev_node = node.prev\n+        next_node = node.next\n+        if prev_node:\n+            prev_node.next = next_node\n+        if next_node:\n+            next_node.prev = prev_node\n+\n+    def _add_to_tail(self, node: Node) -> None:\n+        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n+        prev_node = self.tail.prev\n+        if prev_node:\n+            prev_node.next = node\n+        node.prev = prev_node\n+        node.next = self.tail\n+        self.tail.prev = node\n+\n+    def get(self, key: Any) -> int:\n+        \"\"\"\n+        Retrieve value associated with key in O(1) time.\n+        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n             return -1\n-        if key not in self.cache:\n+\n+        if self.capacity <= 0 or key not in self.map:\n             return -1\n-        self.cache.move_to_end(key)\n-        return self.cache[key]\n \n-    def put(self, key, value):\n+        node = self.map[key]\n+        self._remove(node)\n+        self._add_to_tail(node)\n+        return node.value\n+\n+    def put(self, key: Any, value: int) -> None:\n+        \"\"\"\n+        Insert or update key-value pair in O(1) time.\n+        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n+        Evicts least recently used node if capacity exceeded.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n+            return\n+\n         if self.capacity <= 0:\n             return\n-        if key in self.cache:\n-            self.cache.move_to_end(key)\n-        self.cache[key] = value\n-        if len(self.cache) > self.capacity:\n-            self.cache.popitem(last=False)\n \n+        if key in self.map:\n+            node = self.map[key]\n+            node.value = value\n+            self._remove(node)\n+            self._add_to_tail(node)\n+        else:\n+            if len(self.map) >= self.capacity:\n+                lru_node = self.head.next\n+                if lru_node and lru_node != self.tail:\n+                    self._remove(lru_node)\n+                    if lru_node.key in self.map:\n+                        del self.map[lru_node.key]\n+            new_node = Node(key, value)\n+            self._add_to_tail(new_node)\n+            self.map[key] = new_node\n+\n"
+  },
+  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n\n## Progression Summary\n\n- **Iteration V1**: Score 53.5 (Passed 6/10)\n- **Iteration V2**: Score 87.5 (Passed 9/10)\n- **Iteration V3**: Score 100.0 (Passed 10/10)\n\n---\n\n### Phase 1: V1 -> V2 Revision\n- **Diagnosed Failure**: `EvictionOrderingAndPerformanceDegradation` (Severity: CRITICAL)\n- **Identified Root Cause**: The cache uses a linear list scan causing latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order on get, and crashes with an unhandled TypeError on unhashable keys.\n- **Actionable Directive**: Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.\n- **Observed Score Delta**: +34.0 points\n\n### Phase 2: V2 -> V3 Revision\n- **Diagnosed Failure**: `UnhashableKeyException` (Severity: HIGH)\n- **Identified Root Cause**: The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.\n- **Actionable Directive**: Implement defensive error handling or pre-checks for key hashability. Intercept TypeError exceptions during get and put operations: return minus one for gets and safely return without inserting for puts.\n- **Observed Score Delta**: +12.5 points\n",
+  "zk_inputs": {
+    "score_v1": 54,
+    "score_v2": 88,
+    "score_v3": 100,
+    "log_hash_v1": "387907280358701298811891375733751323166963359926988479810865072916397312798",
+    "log_hash_v2": "50665946076599829707480927436581960766642866465481688242947122306325096633",
+    "log_hash_v3": "31205983669886106897505845854299291619967678032998655384702976412243720020",
+    "hash_v1_hex": "db8c38b3b830560425bce4e69630d1316fc8ba05a8b41d66adb44d6a744b1e39",
+    "hash_v2_hex": "1cad08635f94f3806d02587fd2cd8f6594583930128e0ad433f4d026e328b930",
+    "hash_v3_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
+    "score_v1_full": 53.5,
+    "score_v2_full": 87.5,
+    "score_v3_full": 100.0
+  },
+  "v1": {
+    "code": "# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\nclass LRUCache:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.cache = []\n\n    def get(self, key):\n        hash(key)\n        for k, v in self.cache:\n            if k == key:\n                return v\n        return -1\n\n    def put(self, key, value):\n        hash(key)\n        for i, (k, v) in enumerate(self.cache):\n            if k == key:\n                self.cache[i] = (key, value)\n                return\n        self.cache.append((key, value))\n        for _ in range(2000):\n            sum([1 for _ in self.cache])\n        if self.cap > 0 and len(self.cache) > self.cap:\n            self.cache.pop(0)\n\n",
+    "eval": {
+      "passed": 6,
+      "total": 10,
+      "failed_tests": [
+        "capacity_zero",
+        "order_after_get",
+        "perf_timeout_>4s",
+        "unhashable"
+      ],
+      "correctness": 60.0,
+      "efficiency": 30.0,
+      "safety": 50.0,
+      "quality": 65.0,
+      "final_score": 53.5,
+      "trace_hash_hex": "db8c38b3b830560425bce4e69630d1316fc8ba05a8b41d66adb44d6a744b1e39",
+      "trace_hash_zk": "387907280358701298811891375733751323166963359926988479810865072916397312798",
+      "test_details": [
+        {
+          "id": "basic",
+          "category": "basic",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
+          "status": "passed",
+          "elapsed": 0.232
+        },
+        {
+          "id": "capacity_zero",
+          "category": "boundary",
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
+          "status": "failed",
+          "exit_code": 2,
+          "stderr": "",
+          "elapsed": 0.1846
+        },
+        {
+          "id": "eviction",
+          "category": "basic",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
+          "status": "passed",
+          "elapsed": 0.1947
+        },
+        {
+          "id": "overwrite",
+          "category": "edge",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
+          "status": "passed",
+          "elapsed": 0.1763
+        },
+        {
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
+          "status": "failed",
+          "exit_code": 2,
+          "stderr": "",
+          "elapsed": 0.1807
+        },
+        {
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.1759
+        },
+        {
+          "id": "not_found",
+          "category": "invalid_input",
+          "description": "Queries for nonexistent keys consistently return -1",
+          "status": "passed",
+          "elapsed": 0.1947
+        },
+        {
+          "id": "perf_100k",
+          "category": "performance",
+          "status": "failed",
+          "reason": "Execution timed out (>4.0s)",
+          "elapsed": 4.0
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpabg8kxzk\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.1769
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 0.5251
+        }
+      ]
+    },
+    "critique": {
+      "failure_type": "EvictionOrderingAndPerformanceDegradation",
+      "severity": "CRITICAL",
+      "root_cause": "The cache uses a linear list scan causing latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order on get, and crashes with an unhandled TypeError on unhashable keys.",
+      "fix_instruction": "Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.",
+      "failed_tests": [
+        "capacity_zero",
+        "order_after_get",
+        "perf_timeout_>4s",
+        "unhashable"
+      ]
+    }
+  },
+  "v2": {
+    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    \"\"\"\n    Least Recently Used (LRU) Cache using collections.OrderedDict.\n    Fixes O(1) performance and capacity zero boundary handling based on critique.\n    \"\"\"\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n\n    def get(self, key):\n        if self.capacity <= 0:\n            return -1\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n\n    def put(self, key, value):\n        if self.capacity <= 0:\n            return\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)\n\n",
+    "eval": {
+      "passed": 9,
+      "total": 10,
+      "failed_tests": [
+        "unhashable"
+      ],
+      "correctness": 90.0,
+      "efficiency": 100.0,
+      "safety": 50.0,
+      "quality": 85.0,
+      "final_score": 87.5,
+      "trace_hash_hex": "1cad08635f94f3806d02587fd2cd8f6594583930128e0ad433f4d026e328b930",
+      "trace_hash_zk": "50665946076599829707480927436581960766642866465481688242947122306325096633",
+      "test_details": [
+        {
+          "id": "basic",
+          "category": "basic",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
+          "status": "passed",
+          "elapsed": 0.1829
+        },
+        {
+          "id": "capacity_zero",
+          "category": "boundary",
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
+          "status": "passed",
+          "elapsed": 0.156
+        },
+        {
+          "id": "eviction",
+          "category": "basic",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
+          "status": "passed",
+          "elapsed": 0.165
+        },
+        {
+          "id": "overwrite",
+          "category": "edge",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
+          "status": "passed",
+          "elapsed": 0.2378
+        },
+        {
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
+          "status": "passed",
+          "elapsed": 0.3606
+        },
+        {
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.1871
+        },
+        {
+          "id": "not_found",
+          "category": "invalid_input",
+          "description": "Queries for nonexistent keys consistently return -1",
+          "status": "passed",
+          "elapsed": 0.1754
+        },
+        {
+          "id": "perf_100k",
+          "category": "performance",
+          "status": "passed",
+          "elapsed": 0.1163
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "failed",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmps8h2cbho\\test_runner.py\", line 12, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\",
+          "elapsed": 0.2217
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 0.1582
+        }
+      ]
+    },
+    "critique": {
+      "failure_type": "UnhashableKeyException",
+      "severity": "HIGH",
+      "root_cause": "The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.",
+      "fix_instruction": "Implement defensive error handling or pre-checks for key hashability. Intercept TypeError exceptions during get and put operations: return minus one for gets and safely return without inserting for puts.",
+      "failed_tests": [
+        "unhashable"
+      ]
+    }
+  },
+  "v3": {
+    "code": "\"\"\"\nProduction-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n\"\"\"\nfrom typing import Any, Optional\n\n\nclass Node:\n    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n    def __init__(self, key: Any = None, value: Any = None) -> None:\n        self.key: Any = key\n        self.value: Any = value\n        self.prev: Optional['Node'] = None\n        self.next: Optional['Node'] = None\n\n\nclass LRUCache:\n    \"\"\"\n    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n    Doubly Linked List for deterministic eviction order and strict type safety.\n    \"\"\"\n    def __init__(self, capacity: int) -> None:\n        self.capacity: int = capacity\n        self.map: dict = {}\n        self.head: Node = Node()\n        self.tail: Node = Node()\n        self.head.next = self.tail\n        self.tail.prev = self.head\n\n    def _remove(self, node: Node) -> None:\n        \"\"\"Unlink node from doubly linked list.\"\"\"\n        prev_node = node.prev\n        next_node = node.next\n        if prev_node:\n            prev_node.next = next_node\n        if next_node:\n            next_node.prev = prev_node\n\n    def _add_to_tail(self, node: Node) -> None:\n        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n        prev_node = self.tail.prev\n        if prev_node:\n            prev_node.next = node\n        node.prev = prev_node\n        node.next = self.tail\n        self.tail.prev = node\n\n    def get(self, key: Any) -> int:\n        \"\"\"\n        Retrieve value associated with key in O(1) time.\n        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return -1\n\n        if self.capacity <= 0 or key not in self.map:\n            return -1\n\n        node = self.map[key]\n        self._remove(node)\n        self._add_to_tail(node)\n        return node.value\n\n    def put(self, key: Any, value: int) -> None:\n        \"\"\"\n        Insert or update key-value pair in O(1) time.\n        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n        Evicts least recently used node if capacity exceeded.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return\n\n        if self.capacity <= 0:\n            return\n\n        if key in self.map:\n            node = self.map[key]\n            node.value = value\n            self._remove(node)\n            self._add_to_tail(node)\n        else:\n            if len(self.map) >= self.capacity:\n                lru_node = self.head.next\n                if lru_node and lru_node != self.tail:\n                    self._remove(lru_node)\n                    if lru_node.key in self.map:\n                        del self.map[lru_node.key]\n            new_node = Node(key, value)\n            self._add_to_tail(new_node)\n            self.map[key] = new_node\n\n",
+    "eval": {
+      "passed": 10,
+      "total": 10,
+      "failed_tests": [],
+      "correctness": 100.0,
+      "efficiency": 100.0,
+      "safety": 100.0,
+      "quality": 100.0,
+      "final_score": 100.0,
+      "trace_hash_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
+      "trace_hash_zk": "31205983669886106897505845854299291619967678032998655384702976412243720020",
+      "test_details": [
+        {
+          "id": "basic",
+          "category": "basic",
+          "description": "Standard LRU insertion, retrieval, and eviction sequence",
+          "status": "passed",
+          "elapsed": 0.2606
+        },
+        {
+          "id": "capacity_zero",
+          "category": "boundary",
+          "description": "Edge case where capacity is 0: all puts no-op, all gets return -1",
+          "status": "passed",
+          "elapsed": 0.3041
+        },
+        {
+          "id": "eviction",
+          "category": "basic",
+          "description": "Deterministic eviction of oldest item upon reaching capacity",
+          "status": "passed",
+          "elapsed": 0.2206
+        },
+        {
+          "id": "overwrite",
+          "category": "edge",
+          "description": "Overwriting an existing key updates value without altering valid capacity",
+          "status": "passed",
+          "elapsed": 0.2036
+        },
+        {
+          "id": "order_after_get",
+          "category": "boundary",
+          "description": "Ensures get(key) updates recency so the other key is evicted first",
+          "status": "passed",
+          "elapsed": 0.211
+        },
+        {
+          "id": "single_cap",
+          "category": "boundary",
+          "description": "Capacity of 1: each new insert immediately evicts the previous item",
+          "status": "passed",
+          "elapsed": 0.2055
+        },
+        {
+          "id": "not_found",
+          "category": "invalid_input",
+          "description": "Queries for nonexistent keys consistently return -1",
+          "status": "passed",
+          "elapsed": 0.1974
+        },
+        {
+          "id": "perf_100k",
+          "category": "performance",
+          "status": "passed",
+          "elapsed": 0.1819
+        },
+        {
+          "id": "unhashable",
+          "category": "invalid_input",
+          "description": "Graceful handling of unhashable types (e.g. list key) without crashing",
+          "status": "passed",
+          "elapsed": 0.2007
+        },
+        {
+          "id": "many_puts",
+          "category": "regression",
+          "description": "Batch put operations (100 inserts) on capacity 50; validates early eviction",
+          "status": "passed",
+          "elapsed": 0.219
+        }
+      ]
+    },
+    "critique": {
+      "failure_type": "None",
+      "severity": "LOW",
+      "root_cause": "None. All unit tests, latency bounds, and safety requirements are fully satisfied.",
+      "fix_instruction": "Maintain current architecture; no further revisions required.",
+      "failed_tests": []
+    }
+  }
+}

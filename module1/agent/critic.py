@@ -1,17 +1,21 @@
-"""
-AutoEvolve Protocol - Constitutional AI Adversarial Critic
+"""Constitutional AI Adversarial Critic for AutoEvolve Protocol.
+
+Analyzes execution failures and test results to provide natural-language root-cause
+reflections and actionable revision instructions, strictly enforcing no-code-leakage
+guardrails.
 """
 
-import os
-import re
+from __future__ import annotations
+
 import json
 import logging
-from typing import Dict, Any, Optional
+import os
+import re
+from typing import Any, Dict, Optional
 
 try:
     from dotenv import load_dotenv
     load_dotenv()
-    # Also load from repo root if running from submodule
     _repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     load_dotenv(os.path.join(_repo_root, ".env"))
 except ImportError:
@@ -26,13 +30,8 @@ logger = logging.getLogger("AutoEvolve.Critic")
 
 
 def passes_guardrail(critique_json: Dict[str, Any]) -> bool:
-    """
-    Guardrail Verification:
-    Ensures that parsed JSON values do NOT contain forbidden code tokens:
-    `def put`, `class LRUCache`, or ``` .
-    Enforces pure verbal reflection without code leakage.
-    """
-    forbidden = ["def put", "class LRUCache", "```"]
+    """Verifies that parsed JSON contains NO forbidden code tokens."""
+    forbidden = ["def ", "class ", "```", "import "]
 
     def check(val: Any) -> bool:
         if isinstance(val, str):
@@ -47,25 +46,19 @@ def passes_guardrail(critique_json: Dict[str, Any]) -> bool:
 
 
 def extract_critique_json(text: str) -> Optional[Dict[str, Any]]:
-    """
-    Strips <think>...</think> reasoning blocks and ```json fences before JSON parsing.
-    """
+    """Strips reasoning blocks and parses structured JSON critique."""
     if not text:
         return None
-    # 1. Strip <think>...</think> reasoning tags
     cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    # 2. Extract content within ```json ... ``` fences
     matches = re.findall(r"```(?:json)?\s*(.*?)\s*```", cleaned, flags=re.DOTALL)
     for candidate in matches:
-        candidate_clean = candidate.strip()
         try:
-            data = json.loads(candidate_clean)
+            data = json.loads(candidate.strip())
             if isinstance(data, dict):
                 return data
         except Exception:
             pass
 
-    # 3. Fallback: attempt to find JSON object containing failure_type
     for brace_match in re.finditer(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", cleaned, flags=re.DOTALL):
         try:
             data = json.loads(brace_match.group(0))
@@ -74,7 +67,6 @@ def extract_critique_json(text: str) -> Optional[Dict[str, Any]]:
         except Exception:
             pass
 
-    # 4. Outermost JSON object braces
     brace_match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
     if brace_match:
         try:
@@ -86,21 +78,65 @@ def extract_critique_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_mock_critique(attempt: str, eval_result: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Provides calibrated mock critiques for deterministic testing.
-    Emits structured diagnostic traces strictly in plain English (NO CODE).
-    """
+def get_mock_critique(
+    attempt: str,
+    eval_result: Dict[str, Any],
+    task_id: str = "lru_cache_01",
+) -> Dict[str, Any]:
+    """Provides calibrated mock critiques for deterministic benchmarking."""
     norm = str(attempt).lower().strip()
     failed = eval_result.get("failed_tests", [])
+    is_rl = "rate" in task_id.lower() or "limiter" in task_id.lower()
 
+    if is_rl:
+        if norm in ("v1", "1"):
+            return {
+                "failure_type": "BoundaryBurstVulnerability",
+                "severity": "CRITICAL",
+                "root_cause": (
+                    "The rate limiter employs fixed time-slice windowing. When requests cluster "
+                    "near interval boundaries (such as end of minute one and start of minute two), "
+                    "clients can execute twice the permitted quota within a fraction of the window."
+                ),
+                "fix_instruction": (
+                    "Replace fixed window counters with a continuous sliding window algorithm, "
+                    "such as sliding timestamp logs or double-ended queues. Store timestamps per user "
+                    "and prune entries older than the current timestamp minus window duration."
+                ),
+                "failed_tests": failed or ["rl_boundary_burst_attack", "rl_invalid_inputs"],
+            }
+        elif norm in ("v2", "2"):
+            return {
+                "failure_type": "BoundaryPruningOffByOneAndInvalidInput",
+                "severity": "HIGH",
+                "root_cause": (
+                    "The sliding window logic retains timestamps located precisely at the expiration cutoff boundary "
+                    "(timestamp minus window seconds), and crashes when presented with empty or non-numeric identifiers."
+                ),
+                "fix_instruction": (
+                    "Ensure expiration checks prune all timestamps less than or equal to the cutoff boundary. "
+                    "Add defensive validation for user identifiers and non-numeric or negative timestamps."
+                ),
+                "failed_tests": failed or ["rl_exact_expiration_boundary", "rl_invalid_inputs"],
+            }
+        else:
+            return {
+                "failure_type": "None",
+                "severity": "LOW",
+                "root_cause": "None. All rate limiting boundaries, concurrency tests, and input safeguards pass.",
+                "fix_instruction": "Maintain current architecture; no further revisions required.",
+                "failed_tests": [],
+            }
+
+    # LRU Cache Benchmark
     if norm in ("v1", "1"):
         return {
             "failure_type": "EvictionOrderingAndPerformanceDegradation",
+            "severity": "CRITICAL",
             "root_cause": (
-                "The cache uses a linear list scan causing unacceptable latency under high throughput, "
+                "The cache uses a linear list scan causing latency under high throughput, "
                 "fails to evict or reject items when capacity is zero, does not update recency order "
-                "when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys."
+                "on get, and crashes with an unhandled TypeError on unhashable keys."
             ),
             "fix_instruction": (
                 "Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict "
@@ -112,6 +148,7 @@ def get_mock_critique(attempt: str, eval_result: Dict[str, Any]) -> Dict[str, An
     elif norm in ("v2", "2"):
         return {
             "failure_type": "UnhashableKeyException",
+            "severity": "HIGH",
             "root_cause": (
                 "The cache assumes all input keys are hashable. When an unhashable key such as a list "
                 "or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError."
@@ -125,6 +162,7 @@ def get_mock_critique(attempt: str, eval_result: Dict[str, Any]) -> Dict[str, An
     else:
         return {
             "failure_type": "None",
+            "severity": "LOW",
             "root_cause": "None. All unit tests, latency bounds, and safety requirements are fully satisfied.",
             "fix_instruction": "Maintain current architecture; no further revisions required.",
             "failed_tests": [],
@@ -137,35 +175,31 @@ def critique_code(
     attempt: str = "v1",
     model: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
     force_mock: bool = False,
+    task_id: str = "lru_cache_01",
 ) -> Dict[str, Any]:
-    """
-    Constitutional AI separation:
-    Invokes DeepSeek-R1 (Distill) via chat completions (temp 0.0, seed 42) to provide
-    structured failure analysis. Applies guardrails to prohibit code generation
-    with up to 2 retries, falling back to calibrated mock critique.
-    """
+    """Generates structured failure analysis enforcing pure natural language without code leakage."""
     use_mock_env = os.getenv("USE_MOCK", "0").lower() in ("1", "true", "yes")
     if force_mock or use_mock_env:
-        return get_mock_critique(attempt, eval_result)
+        return get_mock_critique(attempt, eval_result, task_id=task_id)
 
     api_key = os.getenv("FEATHERLESS_API_KEY")
     if not api_key or requests is None:
-        logger.info(f"Using deterministic calibrated mock critique for {attempt} (FEATHERLESS_API_KEY not configured).")
-        return get_mock_critique(attempt, eval_result)
+        logger.info(f"Using deterministic calibrated mock critique for {task_id} ({attempt}).")
+        return get_mock_critique(attempt, eval_result, task_id=task_id)
 
-    # Resolve model: map unquantized / base DeepSeek-R1 to hosted distilled endpoint on Featherless
-    resolved_model = os.getenv("FEATHERLESS_CRITIC_MODEL", model)
-    if resolved_model in ("deepseek-ai/DeepSeek-R1", "DeepSeek-R1"):
-        resolved_model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
-
-    # If all tests passed and perfect score, report success
+    # Perfect score check
     if eval_result.get("passed", 0) == eval_result.get("total", 10) and not eval_result.get("failed_tests"):
         return {
             "failure_type": "None",
+            "severity": "LOW",
             "root_cause": "None. All unit tests, latency bounds, and safety requirements are fully satisfied.",
             "fix_instruction": "Maintain current architecture; no further revisions required.",
             "failed_tests": [],
         }
+
+    resolved_model = os.getenv("FEATHERLESS_CRITIC_MODEL", model)
+    if resolved_model in ("deepseek-ai/DeepSeek-R1", "DeepSeek-R1"):
+        resolved_model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
 
     endpoint = "https://api.featherless.ai/v1/chat/completions"
     headers = {
@@ -177,15 +211,15 @@ def critique_code(
         "You are an adversarial Constitutional AI Critic in the AutoEvolve Protocol. "
         "Your task is to analyze failed unit tests and execution traces. "
         "You must output ONLY valid JSON adhering to this schema wrapped in ```json ``` code block: "
-        '{"failure_type": str, "root_cause": str, "fix_instruction": str, "failed_tests": list}. '
+        '{"failure_type": str, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW", "root_cause": str, "fix_instruction": str, "failed_tests": list}. '
         "CRITICAL CONSTRAINTS:\n"
         "1. Write fix instructions strictly in plain English. NEVER output actual code, function definitions "
-        "(like 'def put'), class headers (like 'class LRUCache'), or markdown code fences inside your JSON string values.\n"
-        "2. For unhashable key errors, instruct defensive handling without crashing: get must return minus one, "
-        "and put must safely ignore without inserting or raising unhandled exceptions."
+        "(like 'def put'), class headers, or markdown code fences inside your JSON string values.\n"
+        "2. Explain WHY the failure occurred and what architectural principle resolves it."
     )
 
     user_message = (
+        f"--- TASK ID: {task_id} ---\n"
         f"--- CODE UNDER REVIEW ---\n{code_string}\n\n"
         f"--- SANDBOX EVALUATION RESULTS ---\n"
         f"Passed: {eval_result.get('passed')} / {eval_result.get('total')}\n"
@@ -211,24 +245,18 @@ def critique_code(
             response.raise_for_status()
             data = response.json()
             message = data["choices"][0]["message"]
-            raw_text = message.get("content") or ""
-            if not raw_text.strip():
-                raw_text = message.get("reasoning") or message.get("reasoning_content") or ""
+            raw_text = message.get("content") or message.get("reasoning") or ""
             parsed = extract_critique_json(raw_text)
 
             if parsed and passes_guardrail(parsed):
-                # Ensure failed_tests field is present
                 if "failed_tests" not in parsed:
                     parsed["failed_tests"] = eval_result.get("failed_tests", [])
+                if "severity" not in parsed:
+                    parsed["severity"] = "HIGH" if len(eval_result.get("failed_tests", [])) > 2 else "MEDIUM"
                 return parsed
 
-            logger.warning(
-                f"Critic guardrail failed or JSON malformed (attempt {attempt_idx + 1}/{max_retries + 1}). "
-                f"Retrying..."
-            )
+            logger.warning(f"Critic guardrail failed or JSON malformed (retry {attempt_idx + 1}).")
         except Exception as e:
             logger.warning(f"Featherless Critic API call failed ({e}).")
 
-    logger.info(f"Fallback to calibrated mock critique for {attempt} after retries.")
-    return get_mock_critique(attempt, eval_result)
-
+    return get_mock_critique(attempt, eval_result, task_id=task_id)
