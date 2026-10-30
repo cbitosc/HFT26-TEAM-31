@@ -37,23 +37,25 @@ Module 1 serves as the autonomous execution engine of the AutoEvolve Protocol. I
 ```
 HFT26-TEAM-31/
 ├── README.md                      # Primary project overview & team details
-├── module1_readme.md              # Detailed technical specification for Module 1
 ├── problem_statement.md           # Official hackathon problem track guidelines
-├── execution_trace.json           # Output artifact with version logs, diffs & ZK inputs
 ├── .env                           # Featherless API credentials (git-ignored)
 ├── .env.example                   # Public environment variable template
 ├── .gitignore                     # Protection rules for secrets and caches
-└── agent/
-    ├── __init__.py                # Package exports, citations & auto-dotenv loading
-    ├── task.py                    # TASK_PROMPT specification & 10 hidden test suites
-    ├── evaluator.py               # Subprocess test sandbox, scoring arithmetic & ZK hashes
-    ├── generator.py               # Featherless API Qwen 2.5 router & collective memory logic
-    ├── critic.py                  # DeepSeek-R1 constitutional critic & guardrail filters
-    ├── loop.py                    # Multi-stage orchestrator, diff engine & CLI entrypoint
-    └── mocks/
-        ├── v1_failing.py          # Calibrated draft mock (Score: 52.0)
-        ├── v2_fixed.py            # Calibrated revised mock (Score: 86.0)
-        └── v3_perfect.py          # Calibrated production mock (Score: 100.0)
+└── module1/                       # Module 1: Adversarial Iterative Engine & Real Sandbox
+    ├── README.md                  # Detailed technical specification for Module 1
+    ├── __init__.py                # Package exports & sys.path resolution
+    ├── execution_trace.json       # Output artifact with version logs, diffs & ZK inputs
+    └── agent/
+        ├── __init__.py            # Package exports, citations & auto-dotenv loading
+        ├── task.py                # TASK_PROMPT specification & 10 hidden test suites
+        ├── evaluator.py           # Subprocess test sandbox, scoring arithmetic & ZK hashes
+        ├── generator.py           # Featherless API Qwen 2.5 router & collective memory logic
+        ├── critic.py              # DeepSeek-R1 constitutional critic & guardrail filters
+        ├── loop.py                # Multi-stage orchestrator, diff engine & CLI entrypoint
+        └── mocks/
+            ├── v1_failing.py      # Calibrated draft mock (Score: 52.0)
+            ├── v2_fixed.py        # Calibrated revised mock (Score: 86.0)
+            └── v3_perfect.py      # Calibrated production mock (Score: 100.0)
 ```
 
 ---
@@ -66,11 +68,11 @@ Module 1 supports three primary operational modes:
 Runs the deterministic calibrated trajectory ($52.0 \to 86.0 \to 100.0$) offline. Use this mode for rapid testing, hackathon verification, and continuous integration without API network latency or token costs:
 
 ```bash
-# Default invocation runs calibrated mock mode
-python agent/loop.py
+# Default invocation runs calibrated mock mode from repo root
+python module1/agent/loop.py
 
 # Or explicitly pass the --mock flag
-python agent/loop.py --mock
+python module1/agent/loop.py --mock
 ```
 
 **Terminal Output:**
@@ -115,7 +117,7 @@ Connects live to open-weight frontier models via the Featherless AI inference AP
 - **Constitutional Critic Model**: `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` (temperature: 0.0, seed: 42)
 
 ```bash
-python agent/loop.py --live
+python module1/agent/loop.py --live
 ```
 
 **Terminal Output:**
@@ -203,8 +205,8 @@ Simulates an independent secondary agent querying the DataDAO registry, inheriti
 
 ```bash
 python -c "
-from agent.generator import generate_code
-from agent.evaluator import evaluate_code
+from module1.agent.generator import generate_code
+from module1.agent.evaluator import evaluate_code
 inherited_mem = {'cid': 'QmAutoEvolveCollectiveMemoryCID', 'proven_score': 100}
 code = generate_code('', attempt='v1', inherited_memory=inherited_mem)
 res = evaluate_code(code)
@@ -223,9 +225,9 @@ Test any Python code string or file against the 10 hidden unit-test sandbox suit
 
 ```bash
 python -c "
-from agent.evaluator import evaluate_code
+from module1.agent.evaluator import evaluate_code
 for fname in ['v1_failing.py', 'v2_fixed.py', 'v3_perfect.py']:
-    with open(f'agent/mocks/{fname}') as f:
+    with open(f'module1/agent/mocks/{fname}') as f:
         res = evaluate_code(f.read())
     print(f'{fname:<15} Score: {res[\"final_score\"]:>5.1f} | Passed: {res[\"passed\"]}/10 | Failed: {res[\"failed_tests\"]}')
 "

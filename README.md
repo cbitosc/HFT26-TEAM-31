@@ -113,18 +113,22 @@ $$\text{Final Score} = \text{round}\Big(0.6 \cdot \text{Correctness} + 0.2 \cdot
 HFT26-TEAM-31/
 ├── README.md                  # Comprehensive technical documentation & research citations
 ├── problem_statement.md       # Hackathon problem statement & guidelines
-├── execution_trace.json       # Generated multi-stage execution log with ZK inputs
-└── agent/
-    ├── __init__.py            # Module exports & research citations
-    ├── task.py                # LRUCache task prompt & 10 hidden sandbox test suites
-    ├── evaluator.py           # Real subprocess test sandbox, scoring & ZK hashes
-    ├── generator.py           # Featherless API integration with Qwen 2.5 Coder & mock fallbacks
-    ├── critic.py              # Constitutional DeepSeek-R1 critic with guardrail validation
-    ├── loop.py                # V1 -> Critique1 -> V2 -> Critique2 -> V3 engine & diff generator
-    └── mocks/
-        ├── v1_failing.py      # Calibrated 52.0 baseline mock
-        ├── v2_fixed.py        # Calibrated 86.0 revision mock
-        └── v3_perfect.py      # Calibrated 100.0 production mock
+├── .env.example               # Environment template (FEATHERLESS_API_KEY)
+└── module1/                   # Module 1: Adversarial Iterative Engine & Real Sandbox
+    ├── README.md              # Detailed technical specification for Module 1
+    ├── __init__.py            # Package root exports & sys.path resolution
+    ├── execution_trace.json   # Generated multi-stage execution log with ZK inputs
+    └── agent/
+        ├── __init__.py        # Module exports & research citations
+        ├── task.py            # LRUCache task prompt & 10 hidden sandbox test suites
+        ├── evaluator.py       # Real subprocess test sandbox, scoring & ZK hashes
+        ├── generator.py       # Featherless API integration with Qwen 2.5 Coder & mock fallbacks
+        ├── critic.py          # Constitutional DeepSeek-R1 critic with guardrail validation
+        ├── loop.py            # V1 -> Critique1 -> V2 -> Critique2 -> V3 engine & diff generator
+        └── mocks/
+            ├── v1_failing.py  # Calibrated 52.0 baseline mock
+            ├── v2_fixed.py    # Calibrated 86.0 revision mock
+            └── v3_perfect.py  # Calibrated 100.0 production mock
 ```
 
 ---
@@ -150,10 +154,10 @@ export FEATHERLESS_API_KEY="your-featherless-api-key"
 From the repository root:
 ```bash
 # Calibrated offline benchmark mode (deterministic 52.0 -> 86.0 -> 100.0)
-python agent/loop.py
+python module1/agent/loop.py
 
 # Or execute live multi-agent loop with Qwen 2.5 Coder + DeepSeek-R1 via Featherless API:
-python agent/loop.py --live
+python module1/agent/loop.py --live
 ```
 
 Expected Terminal Output:
@@ -191,7 +195,7 @@ ZK Inputs Verification:
 ### 4. Verify Collective Cross-Agent Memory
 To verify that Agent 2 can inherit the collective memory from the decentralized registry and bypass failure loops:
 ```bash
-python -c "from agent.generator import generate_code; from agent.evaluator import evaluate_code; mem={'cid': 'QmAutoEvolveMemory'}; c=generate_code('', attempt='v1', inherited_memory=mem); print('Agent 2 Inherited Score:', evaluate_code(c)['final_score'])"
+python -c "from module1.agent.generator import generate_code; from module1.agent.evaluator import evaluate_code; mem={'cid': 'QmAutoEvolveMemory'}; c=generate_code('', attempt='v1', inherited_memory=mem); print('Agent 2 Inherited Score:', evaluate_code(c)['final_score'])"
 ```
 Output:
 ```text

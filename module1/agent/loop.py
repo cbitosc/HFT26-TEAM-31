@@ -8,15 +8,25 @@ import json
 import difflib
 from typing import Dict, Any, Optional
 
-# Ensure project root is on sys.path
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Ensure module1 directory and project root are on sys.path
+AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
+MODULE1_DIR = os.path.dirname(AGENT_DIR)
+PROJECT_ROOT = os.path.dirname(MODULE1_DIR)
 
-from agent.task import TASK_PROMPT
-from agent.evaluator import evaluate_code
-from agent.generator import generate_code
-from agent.critic import critique_code
+for path in [MODULE1_DIR, PROJECT_ROOT]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+try:
+    from agent.task import TASK_PROMPT
+    from agent.evaluator import evaluate_code
+    from agent.generator import generate_code
+    from agent.critic import critique_code
+except ImportError:
+    from module1.agent.task import TASK_PROMPT
+    from module1.agent.evaluator import evaluate_code
+    from module1.agent.generator import generate_code
+    from module1.agent.critic import critique_code
 
 
 def compute_unified_diff(code_a: str, code_b: str, from_file: str, to_file: str) -> str:
@@ -183,9 +193,9 @@ def run_loop(
         "zk_inputs": zk_inputs,
     }
 
-    # Resolve absolute destination path
+    # Resolve absolute destination path (saved in module1 by default)
     if not os.path.isabs(output_path):
-        out_file = os.path.join(PROJECT_ROOT, output_path)
+        out_file = os.path.join(MODULE1_DIR, output_path)
     else:
         out_file = output_path
 

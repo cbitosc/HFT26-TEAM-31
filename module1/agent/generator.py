@@ -11,6 +11,9 @@ from typing import Dict, Any, Optional
 try:
     from dotenv import load_dotenv
     load_dotenv()
+    # Also load from repo root if running from submodule
+    _repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    load_dotenv(os.path.join(_repo_root, ".env"))
 except ImportError:
     pass
 
