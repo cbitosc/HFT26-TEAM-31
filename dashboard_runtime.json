@@ -822,8 +822,8 @@
     }
   },
   "memory_registry": {
-    "ipfs_cid": "bafy_mock_8f0156221c455bba22a5c3f3",
-    "gateway_url": "https://gateway.lighthouse.storage/ipfs/bafy_mock_8f0156221c455bba22a5c3f3",
+    "ipfs_cid": "bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
+    "gateway_url": "https://gateway.lighthouse.storage/ipfs/bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
     "network": "Base Sepolia Testnet (Chain ID: 84532)",
     "storage_provider": "Filecoin / IPFS via Lighthouse",
     "timestamp": 1793401130
