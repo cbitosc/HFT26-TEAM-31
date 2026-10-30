@@ -61,14 +61,11 @@ class StorageUploader:
                 except Exception as e_rest:
                     logger.warning(f"Lighthouse REST API upload failed: {e_rest}. Using local fallback.")
 
-        # Fallback to deterministic IPFS CIDv1 (raw multihash Base32) if remote upload did not succeed
+        # Fallback to deterministic mock CID if remote upload did not succeed
         if not cid:
-            import base64
-            # IPFS CIDv1 format: bafybeic... (0x01 cidv1, 0x55 raw, 0x12 sha2-256, 0x20 32 bytes)
-            raw_hash = hashlib.sha256(payload_bytes).digest()
-            multihash = b"\x01\x55\x12\x20" + raw_hash
-            cid = "bafybeic" + base64.b32encode(multihash).decode("ascii").lower().replace("=", "")[:51]
-            logger.info(f"Generated deterministic IPFS CIDv1 for snapshot: {cid}")
+            content_hash = hashlib.sha256(payload_bytes).hexdigest()[:24]
+            cid = f"bafy_mock_{content_hash}"
+            logger.info(f"Generated deterministic mock CID for snapshot: {cid}")
 
         # Always cache snapshot locally to guarantee fast, offline-tolerant retrieval
         self._save_to_cache(cid, snapshot_payload)

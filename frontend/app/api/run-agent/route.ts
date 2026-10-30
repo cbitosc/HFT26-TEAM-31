@@ -6,28 +6,9 @@ import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
-function getRepoRoot(): string {
-  if (fs.existsSync(path.join(process.cwd(), "pipeline.py"))) {
-    return process.cwd();
-  }
-  return path.resolve(process.cwd(), "..");
-}
-
-const REPO_ROOT = getRepoRoot();
+const REPO_ROOT = path.resolve(process.cwd(), "..");
 const DASHBOARD_RUNTIME_FILE = path.join(REPO_ROOT, "dashboard_runtime.json");
 const ENRICHED_TRACE_FILE = path.join(REPO_ROOT, "module2", "build", "execution_trace_with_proofs.json");
-
-function getPythonExecutable(): string {
-  const venvPythonWin = path.join(REPO_ROOT, ".venv", "Scripts", "python.exe");
-  if (fs.existsSync(venvPythonWin)) {
-    return `"${venvPythonWin}"`;
-  }
-  const venvPythonPosix = path.join(REPO_ROOT, ".venv", "bin", "python");
-  if (fs.existsSync(venvPythonPosix)) {
-    return `"${venvPythonPosix}"`;
-  }
-  return "python";
-}
 
 function getDashboardPayload() {
   if (fs.existsSync(DASHBOARD_RUNTIME_FILE)) {
@@ -149,9 +130,8 @@ export async function GET() {
   }
 
   try {
-    const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
-    await execAsync(`${pythonExe} "${pipelinePy}" --run-agent`, { cwd: REPO_ROOT });
+    await execAsync(`python "${pipelinePy}" --run-agent`, { cwd: REPO_ROOT });
     const fresh = getDashboardPayload();
     if (fresh) return NextResponse.json(fresh);
   } catch (err: any) {
@@ -167,10 +147,9 @@ export async function POST(req: NextRequest) {
     const liveFlag = body.live ? "--live" : "";
     const replayFlag = body.replay ? "--replay" : "";
     const taskId = body.task_id || body.taskId || "lru_cache_01";
-    const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
 
-    const cmd = `${pythonExe} -u "${pipelinePy}" --run-agent --task "${taskId}" ${liveFlag} ${replayFlag}`;
+    const cmd = `python -u "${pipelinePy}" --run-agent --task "${taskId}" ${liveFlag} ${replayFlag}`;
     console.log(`[API /api/run-agent] Executing: ${cmd}`);
 
     const { stdout, stderr } = await execAsync(cmd, { cwd: REPO_ROOT, timeout: 60000 });

@@ -20,12 +20,11 @@ CACHE_DIR = MODULE_DIR / ".cache"
 # Ensure local cache directory exists
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Load environment variables from root .env and module3/.env
-ROOT_ENV_PATH = MODULE_DIR.parent / ".env"
-if ROOT_ENV_PATH.is_file():
-    load_dotenv(dotenv_path=ROOT_ENV_PATH, override=True)
+# Load environment variables from module3/.env (and fallback to root .env if present)
 if ENV_PATH.is_file():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
+else:
+    load_dotenv(override=True)
 
 
 @dataclass(frozen=True)
