@@ -14,4 +14,8 @@ htmlcov/
 # Temporary directories
 tmp/
 temp/
+.venv/
+.tools/
+node_modules/
+*.ptau
 
