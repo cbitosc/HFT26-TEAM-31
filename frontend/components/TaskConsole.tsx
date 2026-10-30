@@ -119,10 +119,11 @@ export default function TaskConsole({
             <button
               type="button"
               onClick={() => onSelectMode("OFFLINE_DEMO")}
-              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${executionMode === "OFFLINE_DEMO"
-                ? "bg-cyan-950 text-cyan-300 border border-cyan-700/60 shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-                }`}
+              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${
+                executionMode === "OFFLINE_DEMO"
+                  ? "bg-cyan-950 text-cyan-300 border border-cyan-700/60 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
               title="Deterministic mock trajectory for offline execution"
             >
               Deterministic Mock
@@ -130,10 +131,11 @@ export default function TaskConsole({
             <button
               type="button"
               onClick={() => onSelectMode("LIVE")}
-              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${executionMode === "LIVE"
-                ? "bg-purple-950 text-purple-300 border border-purple-700/60 shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-                }`}
+              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${
+                executionMode === "LIVE"
+                  ? "bg-purple-950 text-purple-300 border border-purple-700/60 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
               title="Live LLM generation & critique via API"
             >
               Live Model
@@ -141,10 +143,11 @@ export default function TaskConsole({
             <button
               type="button"
               onClick={() => onSelectMode("REPLAY")}
-              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${executionMode === "REPLAY"
-                ? "bg-emerald-950 text-emerald-300 border border-emerald-700/60 shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
-                }`}
+              className={`px-3 py-1 rounded-md font-mono text-[11px] transition ${
+                executionMode === "REPLAY"
+                  ? "bg-emerald-950 text-emerald-300 border border-emerald-700/60 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
               title="Replay historical execution traces"
             >
               Replay Trace
@@ -222,10 +225,11 @@ export default function TaskConsole({
                   type="button"
                   onClick={() => onSelectTask(task.task_id)}
                   disabled={isRunning}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition flex items-center justify-between text-xs ${isSelected
-                    ? "bg-slate-800/90 border-cyan-500/60 text-white shadow-sm"
-                    : "bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
-                    } disabled:opacity-60`}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition flex items-center justify-between text-xs ${
+                    isSelected
+                      ? "bg-slate-800/90 border-cyan-500/60 text-white shadow-sm"
+                      : "bg-slate-900/40 border-slate-800 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                  } disabled:opacity-60`}
                 >
                   <div className="truncate">
                     <span className="font-semibold block truncate">{task.name}</span>
