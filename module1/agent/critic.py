@@ -86,13 +86,50 @@ def extract_critique_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_mock_critique(attempt: str, eval_result: Dict[str, Any]) -> Dict[str, Any]:
+def get_mock_critique(attempt: str, eval_result: Dict[str, Any], task_prompt: Optional[str] = None) -> Dict[str, Any]:
     """
     Provides calibrated mock critiques for deterministic testing.
     Emits structured diagnostic traces strictly in plain English (NO CODE).
     """
     norm = str(attempt).lower().strip()
     failed = eval_result.get("failed_tests", [])
+    prompt_str = (task_prompt or "").lower()
+
+    # Rate Limiter Domain
+    if any(k in prompt_str for k in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket"]):
+        if norm in ("v1", "1"):
+            return {
+                "failure_type": "TokenRefillTimingAndZeroCapacityBoundaryFailure",
+                "root_cause": (
+                    "The rate limiter fails to handle capacity zero gracefully, does not continuously refill "
+                    "tokens using monotonic time elapsed, and allows burst depletion without replenishing."
+                ),
+                "fix_instruction": (
+                    "Ensure capacity <= 0 immediately returns False. Compute continuous token accumulation "
+                    "using time.monotonic() delta multiplied by refill rate, capped at max capacity."
+                ),
+                "failed_tests": failed or ["zero_capacity_boundary", "time_refill_replenishment"],
+            }
+        elif norm in ("v2", "2"):
+            return {
+                "failure_type": "ConcurrencyRaceConditionAndTypeValidationFailure",
+                "root_cause": (
+                    "The rate limiter is not thread-safe under concurrent load and crashes when invalid "
+                    "non-numeric inputs are provided."
+                ),
+                "fix_instruction": (
+                    "Add reentrant lock (threading.RLock) around token operations. Defensively validate "
+                    "arguments in try-except blocks and provide Google-style docstrings."
+                ),
+                "failed_tests": failed or ["invalid_argument_safety", "thread_safety_check"],
+            }
+        else:
+            return {
+                "failure_type": "None",
+                "root_cause": "None. All unit tests, latency bounds, and safety requirements are fully satisfied.",
+                "fix_instruction": "Maintain current architecture; no further revisions required.",
+                "failed_tests": [],
+            }
 
     if norm in ("v1", "1"):
         return {
@@ -135,6 +172,7 @@ def critique_code(
     code_string: str,
     eval_result: Dict[str, Any],
     attempt: str = "v1",
+    task_prompt: Optional[str] = None,
     model: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
     force_mock: bool = False,
 ) -> Dict[str, Any]:

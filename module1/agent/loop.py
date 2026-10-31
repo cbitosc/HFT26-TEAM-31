@@ -22,11 +22,13 @@ try:
     from agent.evaluator import evaluate_code
     from agent.generator import generate_code
     from agent.critic import critique_code
+    from agent.test_case_creator import TestCaseCreator
 except ImportError:
     from module1.agent.task import TASK_PROMPT
     from module1.agent.evaluator import evaluate_code
     from module1.agent.generator import generate_code
     from module1.agent.critic import critique_code
+    from module1.agent.test_case_creator import TestCaseCreator
 
 
 def compute_unified_diff(code_a: str, code_b: str, from_file: str, to_file: str) -> str:
@@ -83,6 +85,7 @@ def run_loop(
     output_path: str = "execution_trace.json",
     inherited_memory: Optional[Dict[str, Any]] = None,
     force_mock: bool = True,
+    custom_prompt: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Executes the complete multi-stage adversarial self-improvement loop:
@@ -101,48 +104,58 @@ def run_loop(
     print(f"  Mode: {mode_label}")
     print("=" * 72)
 
+    # Resolve prompt and dynamic test cases via TestCaseCreator Agent
+    active_prompt = custom_prompt.strip() if custom_prompt and custom_prompt.strip() else TASK_PROMPT
+    active_tests = None
+
+    if custom_prompt and custom_prompt.strip():
+        print(f"\n[TestCaseCreator Agent] Analyzing Custom User Prompt...")
+        creator = TestCaseCreator(task_prompt=active_prompt)
+        active_tests = creator.create_test_suite()
+        print(f"[TestCaseCreator Agent] Created {len(active_tests)} dynamic test cases across Functional, Boundary, Safety, and Stress suites.")
+
     # -------------------------------------------------------------
     # Stage 1: Initial Solution Generation & Sandbox Evaluation (V1)
     # -------------------------------------------------------------
     print("\n[Stage 1] Generating V1 Candidate Solution...")
-    code_v1 = generate_code(TASK_PROMPT, attempt="v1", inherited_memory=inherited_memory, force_mock=force_mock)
+    code_v1 = generate_code(active_prompt, attempt="v1", inherited_memory=inherited_memory, force_mock=force_mock)
 
     print("[Stage 1] Executing Subprocess Sandbox Unit-Test Suite on V1...")
-    v1_eval = evaluate_code(code_v1)
+    v1_eval = evaluate_code(code_v1, tests=active_tests)
     print(f"  --> V1 Final Score: {v1_eval['final_score']} "
           f"(Passed: {v1_eval['passed']}/{v1_eval['total']}, Failed: {v1_eval['failed_tests']})")
 
     print("[Stage 1] Submitting V1 to Adversarial Constitutional Critic (DeepSeek-R1)...")
-    critique_1 = critique_code(code_v1, v1_eval, attempt="v1", force_mock=force_mock)
+    critique_1 = critique_code(code_v1, v1_eval, attempt="v1", task_prompt=active_prompt, force_mock=force_mock)
     print(f"  --> Critique 1 Failure Type: {critique_1.get('failure_type')}")
 
     # -------------------------------------------------------------
     # Stage 2: First Iterative Revision & Sandbox Evaluation (V2)
     # -------------------------------------------------------------
     print("\n[Stage 2] Generating V2 Revised Solution (guided by Critique 1)...")
-    code_v2 = generate_code(TASK_PROMPT, critique=critique_1, attempt="v2", force_mock=force_mock)
+    code_v2 = generate_code(active_prompt, critique=critique_1, attempt="v2", force_mock=force_mock)
 
     print("[Stage 2] Executing Subprocess Sandbox Unit-Test Suite on V2...")
-    v2_eval = evaluate_code(code_v2)
+    v2_eval = evaluate_code(code_v2, tests=active_tests)
     print(f"  --> V2 Final Score: {v2_eval['final_score']} "
           f"(Passed: {v2_eval['passed']}/{v2_eval['total']}, Failed: {v2_eval['failed_tests']})")
 
     print("[Stage 2] Submitting V2 to Adversarial Constitutional Critic (DeepSeek-R1)...")
-    critique_2 = critique_code(code_v2, v2_eval, attempt="v2", force_mock=force_mock)
+    critique_2 = critique_code(code_v2, v2_eval, attempt="v2", task_prompt=active_prompt, force_mock=force_mock)
     print(f"  --> Critique 2 Failure Type: {critique_2.get('failure_type')}")
 
     # -------------------------------------------------------------
     # Stage 3: Second Iterative Revision & Sandbox Evaluation (V3)
     # -------------------------------------------------------------
     print("\n[Stage 3] Generating V3 Production-Grade Solution (guided by Critique 2)...")
-    code_v3 = generate_code(TASK_PROMPT, critique=critique_2, attempt="v3", force_mock=force_mock)
+    code_v3 = generate_code(active_prompt, critique=critique_2, attempt="v3", force_mock=force_mock)
 
     print("[Stage 3] Executing Subprocess Sandbox Unit-Test Suite on V3...")
-    v3_eval = evaluate_code(code_v3)
+    v3_eval = evaluate_code(code_v3, tests=active_tests)
     print(f"  --> V3 Final Score: {v3_eval['final_score']} "
           f"(Passed: {v3_eval['passed']}/{v3_eval['total']}, Failed: {v3_eval['failed_tests']})")
 
-    critique_3 = critique_code(code_v3, v3_eval, attempt="v3", force_mock=force_mock)
+    critique_3 = critique_code(code_v3, v3_eval, attempt="v3", task_prompt=active_prompt, force_mock=force_mock)
 
     # -------------------------------------------------------------
     # Stage 4: Diffs, Changelog, and ZK Input Commitments
@@ -169,7 +182,8 @@ def run_loop(
     }
 
     trace_data = {
-        "task_id": "lru_cache_01",
+        "task_id": "custom_agent_task" if custom_prompt else "lru_cache_01",
+        "task_prompt": active_prompt,
         "v1": {
             "code": code_v1,
             "eval": v1_eval,
@@ -191,6 +205,8 @@ def run_loop(
         },
         "changelog": changelog_text,
         "zk_inputs": zk_inputs,
+        "custom_prompt": active_prompt if custom_prompt else None,
+        "dynamic_tests": active_tests,
     }
 
     # Resolve absolute destination path (saved in module1 by default)

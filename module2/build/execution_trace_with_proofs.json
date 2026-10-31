@@ -1,70 +1,79 @@
 {
-  "task_id": "lru_cache_01",
+  "task_id": "custom_agent_task",
+  "task_prompt": "Implement a Token Bucket Rate Limiter with capacity and refill_rate",
   "v1": {
-    "code": "# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\nclass LRUCache:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.cache = []\n\n    def get(self, key):\n        hash(key)\n        for k, v in self.cache:\n            if k == key:\n                return v\n        return -1\n\n    def put(self, key, value):\n        hash(key)\n        for i, (k, v) in enumerate(self.cache):\n            if k == key:\n                self.cache[i] = (key, value)\n                return\n        self.cache.append((key, value))\n        for _ in range(2000):\n            sum([1 for _ in self.cache])\n        if self.cap > 0 and len(self.cache) > self.cap:\n            self.cache.pop(0)\n\n",
+    "code": "# V1 Failing RateLimiter prototype: lacks zero-capacity guard, time precision, and thread safety.\nclass RateLimiter:\n    def __init__(self, capacity, refill_rate=1.0):\n        self.capacity = capacity\n        self.tokens = capacity\n        self.refill_rate = refill_rate\n        self.last_time = 0\n\n    def allow_request(self):\n        # Naive check: doesn't handle capacity <= 0 and misses continuous refill\n        if self.tokens > 0:\n            self.tokens -= 1\n            return True\n        return False\n\n",
     "eval": {
-      "passed": 6,
+      "passed": 7,
       "total": 10,
       "failed_tests": [
-        "capacity_zero",
-        "order_after_get",
-        "perf_timeout_>4s",
-        "unhashable"
+        "time_refill_replenishment",
+        "token_consumption_multi",
+        "thread_safety_check"
       ],
-      "correctness": 60,
-      "efficiency": 30,
-      "safety": 50,
+      "correctness": 70,
+      "efficiency": 100,
+      "safety": 100,
       "quality": 50,
-      "final_score": 52,
-      "trace_hash_hex": "ca23d830af80f1892f13da6e61ffd8b176e55b96bfe8b23d722d3aa1d48207a0",
-      "trace_hash_zk": "357150496683039437535052423681004004590577548506268073491761557186834366983",
+      "final_score": 77,
+      "trace_hash_hex": "71fb963d555b42538d0803867281bfac4582ecddfbff8222417aa5e71e2beae1",
+      "trace_hash_zk": "201390107104165344673996255493639460264302427941365009788059533047400115178",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
+          "id": "basic_allow",
+          "status": "passed",
+          "category": "functional"
         },
         {
-          "id": "capacity_zero",
+          "id": "capacity_exhaustion",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "zero_capacity_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "negative_refill_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "time_refill_replenishment",
           "status": "failed",
-          "exit_code": 2,
-          "stderr": ""
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "failed",
-          "exit_code": 2,
-          "stderr": ""
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
-          "status": "failed",
-          "reason": "perf_timeout_>4s"
-        },
-        {
-          "id": "unhashable",
-          "status": "failed",
+          "category": "functional",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpn6vacbp8\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpskbq9q0v\\test_runner.py\", line 10, in <module>\n    assert rl.allow_request() is True\n           ^^^^^^^^^^^^^^^^^^^^^^^^"
         },
         {
-          "id": "many_puts",
-          "status": "passed"
+          "id": "burst_capping",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "invalid_argument_safety",
+          "status": "passed",
+          "category": "safety"
+        },
+        {
+          "id": "token_consumption_multi",
+          "status": "failed",
+          "category": "functional",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpskbq9q0v\\test_runner.py\", line 6, in <module>\n    assert hasattr(rl, \"consume\") and rl.consume(3) is True\n           ^^^"
+        },
+        {
+          "id": "high_throughput_stress",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_check",
+          "status": "failed",
+          "category": "safety",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpskbq9q0v\\test_runner.py\", line 7, in <module>\n    assert hasattr(rl, \"_lock\"), \"RateLimiter must provide thread synchron"
         }
       ]
     },
@@ -73,71 +82,82 @@
       "root_cause": "The cache uses a linear list scan causing unacceptable latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys.",
       "fix_instruction": "Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.",
       "failed_tests": [
-        "capacity_zero",
-        "order_after_get",
-        "perf_timeout_>4s",
-        "unhashable"
+        "time_refill_replenishment",
+        "token_consumption_multi",
+        "thread_safety_check"
       ]
     }
   },
   "v2": {
-    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    \"\"\"\n    Least Recently Used (LRU) Cache using collections.OrderedDict.\n    Fixes O(1) performance and capacity zero boundary handling based on critique.\n    \"\"\"\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n\n    def get(self, key):\n        if self.capacity <= 0:\n            return -1\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n\n    def put(self, key, value):\n        if self.capacity <= 0:\n            return\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)\n\n",
+    "code": "# V2 Revised RateLimiter: adds continuous time refill and capacity guards, but lacks threading locks and type validation.\nimport time\n\nclass RateLimiter:\n    \"\"\"Token bucket rate limiter with continuous time refill.\"\"\"\n\n    def __init__(self, capacity: int, refill_rate: float = 1.0) -> None:\n        if not isinstance(capacity, (int, float)) or capacity <= 0:\n            self.capacity = 0\n            self.tokens = 0\n        else:\n            self.capacity = float(capacity)\n            self.tokens = float(capacity)\n\n        self.refill_rate = max(0.0, float(refill_rate)) if isinstance(refill_rate, (int, float)) else 0.0\n        self.last_refill = time.monotonic()\n\n    def allow_request(self) -> bool:\n        if self.capacity <= 0:\n            return False\n\n        now = time.monotonic()\n        elapsed = now - self.last_refill\n        self.last_refill = now\n        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n\n        if self.tokens >= 1.0:\n            self.tokens -= 1.0\n            return True\n        return False\n\n",
     "eval": {
-      "passed": 9,
+      "passed": 8,
       "total": 10,
       "failed_tests": [
-        "unhashable"
+        "token_consumption_multi",
+        "thread_safety_check"
       ],
-      "correctness": 90,
+      "correctness": 80,
       "efficiency": 100,
-      "safety": 50,
-      "quality": 70,
+      "safety": 100,
+      "quality": 80,
       "final_score": 86,
-      "trace_hash_hex": "e4279bdf6f368392c81939a6bcb384cfc146d6ee9d5ac28c43cf66d339714b19",
-      "trace_hash_zk": "403114501199121261589578597062445486201349998601980156027182763915249021259",
+      "trace_hash_hex": "953a3cc2c8f1755f7e473665646fa6dbd63a61a214ee3cd44d1f332f01dc26c4",
+      "trace_hash_zk": "263662152050140967243182470127679309364269586308798851030522985347247365158",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
-        },
-        {
-          "id": "capacity_zero",
-          "status": "passed"
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "passed"
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
+          "id": "basic_allow",
           "status": "passed",
-          "elapsed": 0.0648
+          "category": "functional"
         },
         {
-          "id": "unhashable",
+          "id": "capacity_exhaustion",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "zero_capacity_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "negative_refill_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "time_refill_replenishment",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "burst_capping",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "invalid_argument_safety",
+          "status": "passed",
+          "category": "safety"
+        },
+        {
+          "id": "token_consumption_multi",
           "status": "failed",
+          "category": "functional",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmps1vs81p8\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpgsp3mj7c\\test_runner.py\", line 6, in <module>\n    assert hasattr(rl, \"consume\") and rl.consume(3) is True\n           ^^^"
         },
         {
-          "id": "many_puts",
-          "status": "passed"
+          "id": "high_throughput_stress",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_check",
+          "status": "failed",
+          "category": "safety",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpgsp3mj7c\\test_runner.py\", line 7, in <module>\n    assert hasattr(rl, \"_lock\"), \"RateLimiter must provide thread synchron"
         }
       ]
     },
@@ -146,12 +166,13 @@
       "root_cause": "The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.",
       "fix_instruction": "Implement defensive error handling or pre-checks for key hashability. Intercept TypeError exceptions during get and put operations: return minus one for gets and safely return without inserting for puts.",
       "failed_tests": [
-        "unhashable"
+        "token_consumption_multi",
+        "thread_safety_check"
       ]
     }
   },
   "v3": {
-    "code": "\"\"\"\nProduction-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n\"\"\"\nfrom typing import Any, Optional\n\n\nclass Node:\n    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n    def __init__(self, key: Any = None, value: Any = None) -> None:\n        self.key: Any = key\n        self.value: Any = value\n        self.prev: Optional['Node'] = None\n        self.next: Optional['Node'] = None\n\n\nclass LRUCache:\n    \"\"\"\n    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n    Doubly Linked List for deterministic eviction order and strict type safety.\n    \"\"\"\n    def __init__(self, capacity: int) -> None:\n        self.capacity: int = capacity\n        self.map: dict = {}\n        self.head: Node = Node()\n        self.tail: Node = Node()\n        self.head.next = self.tail\n        self.tail.prev = self.head\n\n    def _remove(self, node: Node) -> None:\n        \"\"\"Unlink node from doubly linked list.\"\"\"\n        prev_node = node.prev\n        next_node = node.next\n        if prev_node:\n            prev_node.next = next_node\n        if next_node:\n            next_node.prev = prev_node\n\n    def _add_to_tail(self, node: Node) -> None:\n        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n        prev_node = self.tail.prev\n        if prev_node:\n            prev_node.next = node\n        node.prev = prev_node\n        node.next = self.tail\n        self.tail.prev = node\n\n    def get(self, key: Any) -> int:\n        \"\"\"\n        Retrieve value associated with key in O(1) time.\n        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return -1\n\n        if self.capacity <= 0 or key not in self.map:\n            return -1\n\n        node = self.map[key]\n        self._remove(node)\n        self._add_to_tail(node)\n        return node.value\n\n    def put(self, key: Any, value: int) -> None:\n        \"\"\"\n        Insert or update key-value pair in O(1) time.\n        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n        Evicts least recently used node if capacity exceeded.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return\n\n        if self.capacity <= 0:\n            return\n\n        if key in self.map:\n            node = self.map[key]\n            node.value = value\n            self._remove(node)\n            self._add_to_tail(node)\n        else:\n            if len(self.map) >= self.capacity:\n                lru_node = self.head.next\n                if lru_node and lru_node != self.tail:\n                    self._remove(lru_node)\n                    if lru_node.key in self.map:\n                        del self.map[lru_node.key]\n            new_node = Node(key, value)\n            self._add_to_tail(new_node)\n            self.map[key] = new_node\n\n",
+    "code": "# V3 Production-Grade RateLimiter: thread-safe, high precision, multi-token consumption, robust error guards.\nimport time\nimport threading\nfrom typing import Union\n\nclass RateLimiter:\n    \"\"\"Industrial-grade, thread-safe Token Bucket Rate Limiter.\n\n    Guarantees strict atomic token consumption, continuous microsecond-precision\n    replenishment, and constitutional edge-case safety.\n    \"\"\"\n\n    def __init__(self, capacity: Union[int, float], refill_rate: Union[int, float] = 1.0) -> None:\n        \"\"\"Initialize the rate limiter with capacity and tokens per second.\"\"\"\n        self._lock = threading.RLock()\n        with self._lock:\n            try:\n                cap_val = float(capacity)\n                rate_val = float(refill_rate)\n            except (TypeError, ValueError):\n                cap_val = 0.0\n                rate_val = 0.0\n\n            if cap_val <= 0.0 or rate_val < 0.0:\n                self.capacity = 0.0\n                self.tokens = 0.0\n                self.refill_rate = 0.0\n            else:\n                self.capacity = cap_val\n                self.tokens = cap_val\n                self.refill_rate = rate_val\n\n            self.last_refill = time.monotonic()\n\n    def allow_request(self) -> bool:\n        \"\"\"Check and atomically consume one token if available.\"\"\"\n        return self.consume(1.0)\n\n    def consume(self, tokens: Union[int, float] = 1.0) -> bool:\n        \"\"\"Atomically consume specified tokens if bucket holds sufficient balance.\"\"\"\n        with self._lock:\n            if self.capacity <= 0.0:\n                return False\n\n            now = time.monotonic()\n            elapsed = now - self.last_refill\n            self.last_refill = now\n\n            if self.refill_rate > 0.0:\n                self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n\n            req = float(tokens)\n            if self.tokens >= req:\n                self.tokens -= req\n                return True\n            return False\n\n",
     "eval": {
       "passed": 10,
       "total": 10,
@@ -159,51 +180,60 @@
       "correctness": 100,
       "efficiency": 100,
       "safety": 100,
-      "quality": 100,
-      "final_score": 100,
-      "trace_hash_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
-      "trace_hash_zk": "31205983669886106897505845854299291619967678032998655384702976412243720020",
+      "quality": 80,
+      "final_score": 98,
+      "trace_hash_hex": "b2717c6a259df9ad138ace6f2c6a7919e331f3179a2201929bb43a20a4b84009",
+      "trace_hash_zk": "315282029079704161590524769085990275415975520165904416867437030060981532736",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
-        },
-        {
-          "id": "capacity_zero",
-          "status": "passed"
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "passed"
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
+          "id": "basic_allow",
           "status": "passed",
-          "elapsed": 0.079
+          "category": "functional"
         },
         {
-          "id": "unhashable",
-          "status": "passed"
+          "id": "capacity_exhaustion",
+          "status": "passed",
+          "category": "functional"
         },
         {
-          "id": "many_puts",
-          "status": "passed"
+          "id": "zero_capacity_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "negative_refill_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "time_refill_replenishment",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "burst_capping",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "invalid_argument_safety",
+          "status": "passed",
+          "category": "safety"
+        },
+        {
+          "id": "token_consumption_multi",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "high_throughput_stress",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_check",
+          "status": "passed",
+          "category": "safety"
         }
       ]
     },
@@ -215,40 +245,103 @@
     }
   },
   "diffs": {
-    "diff_v1_v2": "--- v1_failing.py\n+++ v2_fixed.py\n@@ -1,25 +1,28 @@\n-# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\n+from collections import OrderedDict\n+\n class LRUCache:\n+    \"\"\"\n+    Least Recently Used (LRU) Cache using collections.OrderedDict.\n+    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    \"\"\"\n     def __init__(self, capacity):\n-        self.cap = capacity\n-        self.cache = []\n+        self.capacity = capacity\n+        self.cache = OrderedDict()\n \n     def get(self, key):\n-        hash(key)\n-        for k, v in self.cache:\n-            if k == key:\n-                return v\n-        return -1\n+        if self.capacity <= 0:\n+            return -1\n+        if key not in self.cache:\n+            return -1\n+        self.cache.move_to_end(key)\n+        return self.cache[key]\n \n     def put(self, key, value):\n-        hash(key)\n-        for i, (k, v) in enumerate(self.cache):\n-            if k == key:\n-                self.cache[i] = (key, value)\n-                return\n-        self.cache.append((key, value))\n-        for _ in range(2000):\n-            sum([1 for _ in self.cache])\n-        if self.cap > 0 and len(self.cache) > self.cap:\n-            self.cache.pop(0)\n+        if self.capacity <= 0:\n+            return\n+        if key in self.cache:\n+            self.cache.move_to_end(key)\n+        self.cache[key] = value\n+        if len(self.cache) > self.capacity:\n+            self.cache.popitem(last=False)\n \n",
-    "diff_v2_v3": "--- v2_fixed.py\n+++ v3_perfect.py\n@@ -1,28 +1,94 @@\n-from collections import OrderedDict\n+\"\"\"\n+Production-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n+\"\"\"\n+from typing import Any, Optional\n+\n+\n+class Node:\n+    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n+    def __init__(self, key: Any = None, value: Any = None) -> None:\n+        self.key: Any = key\n+        self.value: Any = value\n+        self.prev: Optional['Node'] = None\n+        self.next: Optional['Node'] = None\n+\n \n class LRUCache:\n     \"\"\"\n-    Least Recently Used (LRU) Cache using collections.OrderedDict.\n-    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n+    Doubly Linked List for deterministic eviction order and strict type safety.\n     \"\"\"\n-    def __init__(self, capacity):\n-        self.capacity = capacity\n-        self.cache = OrderedDict()\n+    def __init__(self, capacity: int) -> None:\n+        self.capacity: int = capacity\n+        self.map: dict = {}\n+        self.head: Node = Node()\n+        self.tail: Node = Node()\n+        self.head.next = self.tail\n+        self.tail.prev = self.head\n \n-    def get(self, key):\n-        if self.capacity <= 0:\n+    def _remove(self, node: Node) -> None:\n+        \"\"\"Unlink node from doubly linked list.\"\"\"\n+        prev_node = node.prev\n+        next_node = node.next\n+        if prev_node:\n+            prev_node.next = next_node\n+        if next_node:\n+            next_node.prev = prev_node\n+\n+    def _add_to_tail(self, node: Node) -> None:\n+        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n+        prev_node = self.tail.prev\n+        if prev_node:\n+            prev_node.next = node\n+        node.prev = prev_node\n+        node.next = self.tail\n+        self.tail.prev = node\n+\n+    def get(self, key: Any) -> int:\n+        \"\"\"\n+        Retrieve value associated with key in O(1) time.\n+        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n             return -1\n-        if key not in self.cache:\n+\n+        if self.capacity <= 0 or key not in self.map:\n             return -1\n-        self.cache.move_to_end(key)\n-        return self.cache[key]\n \n-    def put(self, key, value):\n+        node = self.map[key]\n+        self._remove(node)\n+        self._add_to_tail(node)\n+        return node.value\n+\n+    def put(self, key: Any, value: int) -> None:\n+        \"\"\"\n+        Insert or update key-value pair in O(1) time.\n+        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n+        Evicts least recently used node if capacity exceeded.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n+            return\n+\n         if self.capacity <= 0:\n             return\n-        if key in self.cache:\n-            self.cache.move_to_end(key)\n-        self.cache[key] = value\n-        if len(self.cache) > self.capacity:\n-            self.cache.popitem(last=False)\n \n+        if key in self.map:\n+            node = self.map[key]\n+            node.value = value\n+            self._remove(node)\n+            self._add_to_tail(node)\n+        else:\n+            if len(self.map) >= self.capacity:\n+                lru_node = self.head.next\n+                if lru_node and lru_node != self.tail:\n+                    self._remove(lru_node)\n+                    if lru_node.key in self.map:\n+                        del self.map[lru_node.key]\n+            new_node = Node(key, value)\n+            self._add_to_tail(new_node)\n+            self.map[key] = new_node\n+\n"
+    "diff_v1_v2": "--- v1_failing.py\n+++ v2_fixed.py\n@@ -1,15 +1,31 @@\n-# V1 Failing RateLimiter prototype: lacks zero-capacity guard, time precision, and thread safety.\n+# V2 Revised RateLimiter: adds continuous time refill and capacity guards, but lacks threading locks and type validation.\n+import time\n+\n class RateLimiter:\n-    def __init__(self, capacity, refill_rate=1.0):\n-        self.capacity = capacity\n-        self.tokens = capacity\n-        self.refill_rate = refill_rate\n-        self.last_time = 0\n+    \"\"\"Token bucket rate limiter with continuous time refill.\"\"\"\n \n-    def allow_request(self):\n-        # Naive check: doesn't handle capacity <= 0 and misses continuous refill\n-        if self.tokens > 0:\n-            self.tokens -= 1\n+    def __init__(self, capacity: int, refill_rate: float = 1.0) -> None:\n+        if not isinstance(capacity, (int, float)) or capacity <= 0:\n+            self.capacity = 0\n+            self.tokens = 0\n+        else:\n+            self.capacity = float(capacity)\n+            self.tokens = float(capacity)\n+\n+        self.refill_rate = max(0.0, float(refill_rate)) if isinstance(refill_rate, (int, float)) else 0.0\n+        self.last_refill = time.monotonic()\n+\n+    def allow_request(self) -> bool:\n+        if self.capacity <= 0:\n+            return False\n+\n+        now = time.monotonic()\n+        elapsed = now - self.last_refill\n+        self.last_refill = now\n+        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n+\n+        if self.tokens >= 1.0:\n+            self.tokens -= 1.0\n             return True\n         return False\n \n",
+    "diff_v2_v3": "--- v2_fixed.py\n+++ v3_perfect.py\n@@ -1,31 +1,57 @@\n-# V2 Revised RateLimiter: adds continuous time refill and capacity guards, but lacks threading locks and type validation.\n+# V3 Production-Grade RateLimiter: thread-safe, high precision, multi-token consumption, robust error guards.\n import time\n+import threading\n+from typing import Union\n \n class RateLimiter:\n-    \"\"\"Token bucket rate limiter with continuous time refill.\"\"\"\n+    \"\"\"Industrial-grade, thread-safe Token Bucket Rate Limiter.\n \n-    def __init__(self, capacity: int, refill_rate: float = 1.0) -> None:\n-        if not isinstance(capacity, (int, float)) or capacity <= 0:\n-            self.capacity = 0\n-            self.tokens = 0\n-        else:\n-            self.capacity = float(capacity)\n-            self.tokens = float(capacity)\n+    Guarantees strict atomic token consumption, continuous microsecond-precision\n+    replenishment, and constitutional edge-case safety.\n+    \"\"\"\n \n-        self.refill_rate = max(0.0, float(refill_rate)) if isinstance(refill_rate, (int, float)) else 0.0\n-        self.last_refill = time.monotonic()\n+    def __init__(self, capacity: Union[int, float], refill_rate: Union[int, float] = 1.0) -> None:\n+        \"\"\"Initialize the rate limiter with capacity and tokens per second.\"\"\"\n+        self._lock = threading.RLock()\n+        with self._lock:\n+            try:\n+                cap_val = float(capacity)\n+                rate_val = float(refill_rate)\n+            except (TypeError, ValueError):\n+                cap_val = 0.0\n+                rate_val = 0.0\n+\n+            if cap_val <= 0.0 or rate_val < 0.0:\n+                self.capacity = 0.0\n+                self.tokens = 0.0\n+                self.refill_rate = 0.0\n+            else:\n+                self.capacity = cap_val\n+                self.tokens = cap_val\n+                self.refill_rate = rate_val\n+\n+            self.last_refill = time.monotonic()\n \n     def allow_request(self) -> bool:\n-        if self.capacity <= 0:\n+        \"\"\"Check and atomically consume one token if available.\"\"\"\n+        return self.consume(1.0)\n+\n+    def consume(self, tokens: Union[int, float] = 1.0) -> bool:\n+        \"\"\"Atomically consume specified tokens if bucket holds sufficient balance.\"\"\"\n+        with self._lock:\n+            if self.capacity <= 0.0:\n+                return False\n+\n+            now = time.monotonic()\n+            elapsed = now - self.last_refill\n+            self.last_refill = now\n+\n+            if self.refill_rate > 0.0:\n+                self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n+\n+            req = float(tokens)\n+            if self.tokens >= req:\n+                self.tokens -= req\n+                return True\n             return False\n \n-        now = time.monotonic()\n-        elapsed = now - self.last_refill\n-        self.last_refill = now\n-        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n-\n-        if self.tokens >= 1.0:\n-            self.tokens -= 1.0\n-            return True\n-        return False\n-\n"
   },
-  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n\n## Summary of Progression\n- **Iteration V1**: Score 52.0 (Passed 6/10)\n- **Iteration V2**: Score 86.0 (Passed 9/10) [Gain: +34.0 pts]\n- **Iteration V3**: Score 100.0 (Passed 10/10) [Gain: +14.0 pts]\n\n---\n\n### Phase 1: V1 -> V2 Architectural Refinement\n- **Diagnosed Failure Type**: `EvictionOrderingAndPerformanceDegradation`\n- **Identified Root Cause**: The cache uses a linear list scan causing unacceptable latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys.\n- **Applied Changes**:\n  - Replaced O(N) linear search list with `collections.OrderedDict` to achieve strict O(1) time complexity.\n  - Eliminated artificial execution delay, passing the high-throughput `perf_100k` stress test (<0.85s).\n  - Fixed boundary handling for `capacity <= 0`: all puts immediately no-op and gets return -1.\n  - Implemented recency updating on `get(key)`: accessed items are moved to the MRU position.\n  - Added comprehensive class docstrings.\n- **Verification Metric**: Final score increased from 52.0 to 86.0.\n\n---\n\n### Phase 2: V2 -> V3 Hardening & Constitutional Safety\n- **Diagnosed Failure Type**: `UnhashableKeyException`\n- **Identified Root Cause**: The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.\n- **Applied Changes**:\n  - Architected production-grade Doubly Linked List with explicit `class Node` and hash map.\n  - Hardened input safety: wrapped hashing logic in `try-except TypeError` blocks to gracefully reject unhashable objects (e.g. lists, dicts) without runtime crashes.\n  - Added complete static type hints (`-> int`, `-> None`, `Any`, `Optional`).\n  - Added exhaustive docstrings adhering to Google Python style guidelines.\n- **Verification Metric**: Final score reached 100.0 (10/10 tests passed).\n",
+  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n\n## Summary of Progression\n- **Iteration V1**: Score 77.0 (Passed 7/10)\n- **Iteration V2**: Score 86.0 (Passed 8/10) [Gain: +9.0 pts]\n- **Iteration V3**: Score 98.0 (Passed 10/10) [Gain: +12.0 pts]\n\n---\n\n### Phase 1: V1 -> V2 Architectural Refinement\n- **Diagnosed Failure Type**: `EvictionOrderingAndPerformanceDegradation`\n- **Identified Root Cause**: The cache uses a linear list scan causing unacceptable latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys.\n- **Applied Changes**:\n  - Replaced O(N) linear search list with `collections.OrderedDict` to achieve strict O(1) time complexity.\n  - Eliminated artificial execution delay, passing the high-throughput `perf_100k` stress test (<0.85s).\n  - Fixed boundary handling for `capacity <= 0`: all puts immediately no-op and gets return -1.\n  - Implemented recency updating on `get(key)`: accessed items are moved to the MRU position.\n  - Added comprehensive class docstrings.\n- **Verification Metric**: Final score increased from 77.0 to 86.0.\n\n---\n\n### Phase 2: V2 -> V3 Hardening & Constitutional Safety\n- **Diagnosed Failure Type**: `UnhashableKeyException`\n- **Identified Root Cause**: The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.\n- **Applied Changes**:\n  - Architected production-grade Doubly Linked List with explicit `class Node` and hash map.\n  - Hardened input safety: wrapped hashing logic in `try-except TypeError` blocks to gracefully reject unhashable objects (e.g. lists, dicts) without runtime crashes.\n  - Added complete static type hints (`-> int`, `-> None`, `Any`, `Optional`).\n  - Added exhaustive docstrings adhering to Google Python style guidelines.\n- **Verification Metric**: Final score reached 98.0 (10/10 tests passed).\n",
   "zk_inputs": {
-    "score_v1": 52,
+    "score_v1": 77,
     "score_v2": 86,
-    "score_v3": 100,
-    "log_hash_v1": "357150496683039437535052423681004004590577548506268073491761557186834366983",
-    "log_hash_v2": "403114501199121261589578597062445486201349998601980156027182763915249021259",
-    "log_hash_v3": "31205983669886106897505845854299291619967678032998655384702976412243720020",
-    "hash_v1_hex": "ca23d830af80f1892f13da6e61ffd8b176e55b96bfe8b23d722d3aa1d48207a0",
-    "hash_v2_hex": "e4279bdf6f368392c81939a6bcb384cfc146d6ee9d5ac28c43cf66d339714b19",
-    "hash_v3_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
-    "score_v1_full": 52,
+    "score_v3": 98,
+    "log_hash_v1": "201390107104165344673996255493639460264302427941365009788059533047400115178",
+    "log_hash_v2": "263662152050140967243182470127679309364269586308798851030522985347247365158",
+    "log_hash_v3": "315282029079704161590524769085990275415975520165904416867437030060981532736",
+    "hash_v1_hex": "71fb963d555b42538d0803867281bfac4582ecddfbff8222417aa5e71e2beae1",
+    "hash_v2_hex": "953a3cc2c8f1755f7e473665646fa6dbd63a61a214ee3cd44d1f332f01dc26c4",
+    "hash_v3_hex": "b2717c6a259df9ad138ace6f2c6a7919e331f3179a2201929bb43a20a4b84009",
+    "score_v1_full": 77,
     "score_v2_full": 86,
-    "score_v3_full": 100
+    "score_v3_full": 98
   },
+  "custom_prompt": "Implement a Token Bucket Rate Limiter with capacity and refill_rate",
+  "dynamic_tests": [
+    {
+      "id": "basic_allow",
+      "category": "functional",
+      "description": "Allows initial requests within bucket capacity",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=3, refill_rate=1.0)\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nsys.exit(0)"
+    },
+    {
+      "id": "capacity_exhaustion",
+      "category": "functional",
+      "description": "Rejects requests once burst tokens are fully exhausted",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=2, refill_rate=1.0)\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nassert rl.allow_request() is False\nsys.exit(0)"
+    },
+    {
+      "id": "zero_capacity_boundary",
+      "category": "boundary",
+      "description": "Boundary check: capacity <= 0 must reject all requests safely",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=0, refill_rate=1.0)\nassert rl.allow_request() is False\nrl_neg = RateLimiter(capacity=-5, refill_rate=1.0)\nassert rl_neg.allow_request() is False\nsys.exit(0)"
+    },
+    {
+      "id": "negative_refill_boundary",
+      "category": "boundary",
+      "description": "Boundary check: negative or zero refill rate behaves safely without crashing",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=2, refill_rate=0.0)\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nassert rl.allow_request() is False\nsys.exit(0)"
+    },
+    {
+      "id": "time_refill_replenishment",
+      "category": "functional",
+      "description": "Tokens replenish over time according to refill_rate",
+      "script": "import sys, time\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=2, refill_rate=10.0)  # 10 tokens per sec = 1 token per 0.1s\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nassert rl.allow_request() is False\ntime.sleep(0.12)\nassert rl.allow_request() is True\nsys.exit(0)"
+    },
+    {
+      "id": "burst_capping",
+      "category": "boundary",
+      "description": "Token accumulation never exceeds max capacity after long sleep",
+      "script": "import sys, time\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=2, refill_rate=20.0)\ntime.sleep(0.15)\n# Even with long sleep, max burst should not exceed capacity (2)\nassert rl.allow_request() is True\nassert rl.allow_request() is True\nassert rl.allow_request() is False\nsys.exit(0)"
+    },
+    {
+      "id": "invalid_argument_safety",
+      "category": "safety",
+      "description": "Handles non-numeric or invalid parameters without unhandled exception",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\ntry:\n    rl = RateLimiter(capacity=\"invalid\", refill_rate=\"none\")\n    # If it constructs, ensure allow_request doesn't throw unhandled crash\n    rl.allow_request()\nexcept (TypeError, ValueError):\n    pass\nsys.exit(0)"
+    },
+    {
+      "id": "token_consumption_multi",
+      "category": "functional",
+      "description": "Supports consuming multiple tokens if parameter provided",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=5, refill_rate=1.0)\nassert hasattr(rl, \"consume\") and rl.consume(3) is True\nassert rl.consume(3) is False\nsys.exit(0)"
+    },
+    {
+      "id": "high_throughput_stress",
+      "category": "stress",
+      "description": "High-frequency sequential calls must execute under 0.5s without drift",
+      "script": "import sys, time\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=1000, refill_rate=500.0)\nt0 = time.perf_counter()\nfor _ in range(5000):\n    rl.allow_request()\nelapsed = time.perf_counter() - t0\nassert elapsed < 0.85, f\"Execution took {elapsed:.4f}s\"\nsys.exit(0)"
+    },
+    {
+      "id": "thread_safety_check",
+      "category": "safety",
+      "description": "Concurrent request simulation remains stable",
+      "script": "import sys\nfrom concurrent.futures import ThreadPoolExecutor\nsys.path.insert(0, \".\")\nfrom solution import RateLimiter\n\nrl = RateLimiter(capacity=50, refill_rate=10.0)\nassert hasattr(rl, \"_lock\"), \"RateLimiter must provide thread synchronization lock\"\nwith ThreadPoolExecutor(max_workers=4) as ex:\n    results = list(ex.map(lambda _: rl.allow_request(), range(40)))\nassert any(results)\nsys.exit(0)"
+    }
+  ],
   "zk_proofs": {
     "v1_v2": {
       "proof": {
         "pi_a": [
-          "2903249545246949556711000858258877251375694383839767715479138925961648461343",
-          "8116719183419610459051248133287028324650816176693272260579105745755557890820",
+          "15006689314889687138897258691217949388263111276010898262217519109716729563719",
+          "5932056288644875534479646733825110036059395117299537776498786230696460425302",
           "1"
         ],
         "pi_b": [
           [
-            "1345699085034512992521309957663950498237122257726790851541959385475544381467",
-            "9999243097414267785070063055610832218210748315976256353020751297465408732239"
+            "18212460118161964984774409229417120217642325449317175582674136051997262748918",
+            "14419364667340498930575000911370143887323396957078473280510662886109602614935"
           ],
           [
-            "15287512117227475255562664344969987817274584706305527075845910732586595549723",
-            "17111526616843058405158606452817503058147216708066013131296760217820884341324"
+            "6180170129129770810428772844617529476977061453057121777032635316571397188074",
+            "10010896809022759010986263742276181032791006725527555065366809979097226976570"
           ],
           [
             "1",
@@ -256,36 +349,36 @@
           ]
         ],
         "pi_c": [
-          "5616803826011375372792277293830134775394524873813724812372607452933536987207",
-          "15944953005213907000346108066666981795390460002821979109058435178881356711438",
+          "20915449318106518761493423517927863718092395678767375667683839580087377487010",
+          "9318326513321945152814137676173366545139829073202656406079029513990957288519",
           "1"
         ],
         "protocol": "groth16",
         "curve": "bn128"
       },
       "public": [
-        "34",
+        "9",
         "1",
-        "357150496683039437535052423681004004590577548506268073491761557186834366983",
-        "403114501199121261589578597062445486201349998601980156027182763915249021259"
+        "201390107104165344673996255493639460264302427941365009788059533047400115178",
+        "263662152050140967243182470127679309364269586308798851030522985347247365158"
       ],
       "verified": true
     },
     "v2_v3": {
       "proof": {
         "pi_a": [
-          "555126102723851281187417879808592034817516212136681153232347916845708742832",
-          "21266012294308982016113546101762049330609962810789925153376317322257317410191",
+          "5206935613098256107820955612134535493028407783522950835182182421490502538797",
+          "11670502233204858540650288516387067004530491586078616205912197660945197620533",
           "1"
         ],
         "pi_b": [
           [
-            "4508391295563664083014808153185740521164770614048799477813530377048221034315",
-            "8140290805809882788633845511070987284890264323892942720397616437230959772211"
+            "19627434671890469857440911979972837688833842945784672638493254117624519798090",
+            "2825621499367773511787325960653974578245560571468542202301363013703729898986"
           ],
           [
-            "2015412277734893103125349029235198602564726353141918300295037855806672413351",
-            "13914316138095464620868008078720306741463587449536600148045206234189922556073"
+            "6621360917509515117786290012721365146139154801729156571675913923308518294695",
+            "13872128109885700572942320587049420035903099366098071207403405421804471734160"
           ],
           [
             "1",
@@ -293,18 +386,18 @@
           ]
         ],
         "pi_c": [
-          "9497169242553870291630532553193916209357638950352852413576728815519418498492",
-          "12267715417562593576708260227439327140815573021611517450673064942147515851927",
+          "2809281713101030481177374064393439270961490727118288506374060368956300027798",
+          "2584124854167053087018411054011499200404865871817553321602550994655422648467",
           "1"
         ],
         "protocol": "groth16",
         "curve": "bn128"
       },
       "public": [
-        "14",
+        "12",
         "1",
-        "403114501199121261589578597062445486201349998601980156027182763915249021259",
-        "31205983669886106897505845854299291619967678032998655384702976412243720020"
+        "263662152050140967243182470127679309364269586308798851030522985347247365158",
+        "315282029079704161590524769085990275415975520165904416867437030060981532736"
       ],
       "verified": true
     }

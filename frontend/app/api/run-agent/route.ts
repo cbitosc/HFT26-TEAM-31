@@ -206,10 +206,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const liveFlag = body.live ? "--live" : "";
+    const customPromptArg = body.custom_prompt && typeof body.custom_prompt === "string" && body.custom_prompt.trim().length > 0
+      ? `--custom-prompt "${body.custom_prompt.trim().replace(/"/g, '\\"')}"`
+      : "";
     const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
 
-    const cmd = `${pythonExe} -u "${pipelinePy}" --run-agent ${liveFlag}`;
+    const cmd = `${pythonExe} -u "${pipelinePy}" --run-agent ${liveFlag} ${customPromptArg}`.trim();
     console.log(`[API /api/run-agent] Executing: ${cmd}`);
 
     const { stdout, stderr } = await execAsync(cmd, { cwd: REPO_ROOT });

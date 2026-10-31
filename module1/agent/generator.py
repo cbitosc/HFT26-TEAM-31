@@ -53,9 +53,21 @@ def _load_mock(filename: str) -> str:
         return f.read()
 
 
-def _load_mock_for_attempt(attempt: str) -> str:
-    """Resolves deterministic calibrated mock code for the given iteration."""
+def _load_mock_for_attempt(attempt: str, task_prompt: Optional[str] = None) -> str:
+    """Resolves deterministic calibrated mock code for the given iteration and domain."""
     norm = str(attempt).lower().strip()
+    prompt_str = (task_prompt or "").lower()
+
+    # Rate Limiter domain
+    if any(k in prompt_str for k in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket", "token_bucket"]):
+        if norm in ("v1", "1"):
+            return _load_mock("v1_rate_limiter.py")
+        elif norm in ("v2", "2"):
+            return _load_mock("v2_rate_limiter.py")
+        else:
+            return _load_mock("v3_rate_limiter.py")
+
+    # Default: LRUCache benchmark
     if norm in ("v1", "1"):
         return _load_mock("v1_failing.py")
     elif norm in ("v2", "2"):
@@ -88,12 +100,12 @@ def generate_code(
 
     use_mock_env = os.getenv("USE_MOCK", "0").lower() in ("1", "true", "yes")
     if force_mock or use_mock_env:
-        return _load_mock_for_attempt(norm_attempt)
+        return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 
     api_key = os.getenv("FEATHERLESS_API_KEY")
     if not api_key or requests is None:
         logger.info(f"Using deterministic calibrated mock for {norm_attempt} (FEATHERLESS_API_KEY not configured).")
-        return _load_mock_for_attempt(norm_attempt)
+        return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 
     endpoint = "https://api.featherless.ai/v1/chat/completions"
     headers = {
@@ -179,8 +191,8 @@ def generate_code(
         extracted = extract_python_code(raw_text)
         if extracted:
             return extracted
-        return _load_mock_for_attempt(norm_attempt)
+        return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
     except Exception as e:
         logger.warning(f"Featherless API call failed ({e}); falling back to calibrated mock for {norm_attempt}.")
-        return _load_mock_for_attempt(norm_attempt)
+        return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 

@@ -28,12 +28,14 @@ try:
     from agent.generator import generate_code, extract_python_code
     from agent.critic import critique_code
     from agent.loop import run_loop
+    from agent.test_case_creator import TestCaseCreator
 except ImportError:
     from module1.agent.task import TASK_PROMPT, HIDDEN_TESTS
     from module1.agent.evaluator import evaluate_code
     from module1.agent.generator import generate_code, extract_python_code
     from module1.agent.critic import critique_code
     from module1.agent.loop import run_loop
+    from module1.agent.test_case_creator import TestCaseCreator
 
 __all__ = [
     "TASK_PROMPT",
@@ -43,5 +45,6 @@ __all__ = [
     "extract_python_code",
     "critique_code",
     "run_loop",
+    "TestCaseCreator",
 ]
 

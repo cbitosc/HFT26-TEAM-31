@@ -17,16 +17,30 @@ import {
   Activity,
   CheckCircle2,
   Radio,
+  Sparkles,
+  FlaskConical,
+  ChevronDown,
+  ChevronUp,
+  FileCode2,
+  Edit3,
 } from "lucide-react";
 import ExecutionTree, { IterationData } from "./ExecutionTree";
 import DiffViewer from "./DiffViewer";
 import ZkTelemetryPanel from "./ZkTelemetryPanel";
 import Agent2MemoryTab, { Agent2InheritResult } from "./Agent2MemoryTab";
 
+export interface DynamicTestCase {
+  name: string;
+  category: string;
+  description: string;
+}
+
 export interface DashboardRuntimeData {
   task_id: string;
   protocol_version: string;
   live_mode?: boolean;
+  custom_prompt?: string | null;
+  dynamic_tests?: DynamicTestCase[] | null;
   iterations: IterationData[];
   diffs: {
     v1_v2?: string;
@@ -57,6 +71,27 @@ export interface DashboardRuntimeData {
   };
 }
 
+const PRESET_PROMPTS = [
+  {
+    id: "lru",
+    label: "LRU Cache (Benchmark)",
+    prompt: "",
+    desc: "Default 10-test suite with linear scan to doubly linked list progression.",
+  },
+  {
+    id: "rate_limiter",
+    label: "Token Bucket Rate Limiter",
+    prompt: "Implement a Token Bucket Rate Limiter with capacity and refill_rate",
+    desc: "Dynamically synthesizes token leak, zero capacity, and thread-safety tests.",
+  },
+  {
+    id: "ring_buffer",
+    label: "Thread-Safe Ring Buffer",
+    prompt: "Implement a thread-safe Circular Ring Buffer with fixed capacity and overflow protection",
+    desc: "Dynamically synthesizes circular wrap-around, overflow, and concurrent lock tests.",
+  },
+];
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"tree" | "diff" | "zk" | "agent2">("tree");
   const [runtimeData, setRuntimeData] = useState<DashboardRuntimeData | null>(null);
@@ -64,6 +99,12 @@ export default function Dashboard() {
   const [runningLoop, setRunningLoop] = useState<boolean>(false);
   const [liveMode, setLiveMode] = useState<boolean>(false);
   const [agent2Data, setAgent2Data] = useState<Agent2InheritResult | null>(null);
+
+  // Custom Prompt & TestCaseCreator States
+  const [selectedPreset, setSelectedPreset] = useState<string>("lru");
+  const [customPrompt, setCustomPrompt] = useState<string>("");
+  const [showPromptEditor, setShowPromptEditor] = useState<boolean>(false);
+  const [showTestsDrawer, setShowTestsDrawer] = useState<boolean>(false);
 
   // Fetch initial telemetry on mount
   useEffect(() => {
@@ -77,6 +118,16 @@ export default function Dashboard() {
       if (res.ok) {
         const json = await res.json();
         setRuntimeData(json);
+        if (json.custom_prompt) {
+          setCustomPrompt(json.custom_prompt);
+          // Match preset if exists
+          const matched = PRESET_PROMPTS.find((p) => p.prompt === json.custom_prompt);
+          if (matched) {
+            setSelectedPreset(matched.id);
+          } else {
+            setSelectedPreset("custom");
+          }
+        }
       }
     } catch (err) {
       console.error("Failed to fetch dashboard telemetry:", err);
@@ -85,13 +136,33 @@ export default function Dashboard() {
     }
   };
 
+  const handleSelectPreset = (presetId: string) => {
+    setSelectedPreset(presetId);
+    if (presetId === "custom") {
+      setShowPromptEditor(true);
+    } else {
+      const preset = PRESET_PROMPTS.find((p) => p.id === presetId);
+      if (preset) {
+        setCustomPrompt(preset.prompt);
+      }
+    }
+  };
+
   const handleRunAgentLoop = async () => {
     setRunningLoop(true);
     try {
+      const activePrompt = customPrompt.trim();
+      const payload: { live: boolean; custom_prompt?: string } = {
+        live: liveMode,
+      };
+      if (activePrompt.length > 0) {
+        payload.custom_prompt = activePrompt;
+      }
+
       const res = await fetch("/api/run-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ live: liveMode }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const json = await res.json();
@@ -110,6 +181,9 @@ export default function Dashboard() {
   const initialScore = v1?.score ?? 52.0;
   const finalScore = v3?.score ?? 100.0;
   const scoreDelta = (finalScore - initialScore).toFixed(1);
+
+  const isDynamicMode = !!(runtimeData?.custom_prompt || (customPrompt && customPrompt.trim().length > 0));
+  const dynamicTestsCount = runtimeData?.dynamic_tests?.length || 0;
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col">
@@ -130,6 +204,9 @@ export default function Dashboard() {
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 font-semibold">
                     v1.0-ZK
                   </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 font-semibold">
+                    Local DataDAO
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400">
                   Decentralized, ZK-Attested Self-Improving Autonomous Agent with Immutable Cross-Agent Memory
@@ -139,10 +216,10 @@ export default function Dashboard() {
 
             {/* Protocol Status Badges & Trigger Controls */}
             <div className="flex flex-wrap items-center gap-2.5">
-              {/* Network Pill */}
+              {/* Local DataDAO Pill */}
               <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Base Sepolia</span>
+                <span>Local DataDAO</span>
               </div>
 
               {/* Prover Pill */}
@@ -175,7 +252,7 @@ export default function Dashboard() {
                 {runningLoop ? (
                   <>
                     <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Executing V1 &rarr; V3...</span>
+                    <span>Synthesizing & Iterating...</span>
                   </>
                 ) : (
                   <>
@@ -191,6 +268,194 @@ export default function Dashboard() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        {/* Task & TestCaseCreator Prompt Controller Banner */}
+        <section className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-900/40 border border-blue-700/50 flex items-center justify-center text-blue-400">
+                <FlaskConical className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-sm font-semibold text-white tracking-wide">
+                    Task Prompt &amp; TestCaseCreator Agent
+                  </h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/60">
+                    Dynamic Synthesis
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Select a predefined benchmark or enter a custom prompt. The <span className="text-blue-400 font-medium">TestCaseCreator agent</span> will dynamically synthesize functional, boundary, safety, and stress unit tests before generation and evaluation.
+                </p>
+              </div>
+            </div>
+
+            {/* Prompt Editor Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowPromptEditor(!showPromptEditor)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-xs font-mono text-slate-300 border border-slate-700/70 transition"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+              <span>{showPromptEditor ? "Hide Prompt Editor" : "Custom Prompt Editor"}</span>
+              {showPromptEditor ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
+            </button>
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
+            <span className="text-xs font-mono text-slate-400 mr-2">Target Task:</span>
+            {PRESET_PROMPTS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleSelectPreset(preset.id)}
+                className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition ${
+                  selectedPreset === preset.id && (!showPromptEditor || preset.prompt === customPrompt)
+                    ? "bg-blue-600/20 border-blue-500 text-blue-300 font-semibold shadow-sm shadow-blue-500/20"
+                    : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleSelectPreset("custom")}
+              className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition ${
+                selectedPreset === "custom" || showPromptEditor
+                  ? "bg-purple-600/20 border-purple-500 text-purple-300 font-semibold"
+                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              ✍️ Custom User Prompt...
+            </button>
+          </div>
+
+          {/* Interactive Custom Prompt Editor Form */}
+          {showPromptEditor && (
+            <div className="mt-4 pt-4 border-t border-slate-800 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="block text-xs font-mono text-slate-300">
+                Custom Generation Directive for Generator &amp; TestCaseCreator Agent:
+              </label>
+              <div className="relative">
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => {
+                    setCustomPrompt(e.target.value);
+                    setSelectedPreset("custom");
+                  }}
+                  rows={3}
+                  placeholder="e.g. Implement a Token Bucket Rate Limiter with capacity and refill_rate, thread-safe consumption, and time refill..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition resize-y"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-slate-400">
+                <div className="flex items-center space-x-2 text-indigo-300">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>TestCaseCreator dynamically generates syntax-verified tests across 4 safety suites.</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomPrompt("");
+                      setSelectedPreset("lru");
+                      setShowPromptEditor(false);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                  >
+                    Reset to Default LRU
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRunAgentLoop}
+                    disabled={runningLoop}
+                    className="flex items-center space-x-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-md shadow-blue-600/30 transition disabled:opacity-50"
+                  >
+                    {runningLoop ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Synthesizing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Synthesize &amp; Run Agent Loop</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dynamic Test Suite Status Pill */}
+          {dynamicTestsCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center space-x-2 text-xs font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-slate-300 font-semibold">Active Dynamic Suite:</span>
+                <span className="text-emerald-400 font-medium">{dynamicTestsCount} Unit Tests Synthesized</span>
+                <span className="text-slate-500 text-[11px]">&bull; Task: {runtimeData?.custom_prompt?.slice(0, 48)}...</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTestsDrawer(!showTestsDrawer)}
+                className="text-[11px] font-mono text-blue-400 hover:text-blue-300 flex items-center space-x-1"
+              >
+                <span>{showTestsDrawer ? "Hide Generated Tests" : "Inspect Generated Test Cases"}</span>
+                {showTestsDrawer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+          )}
+
+          {/* Expandable Test Cases Grid */}
+          {showTestsDrawer && runtimeData?.dynamic_tests && (
+            <div className="mt-3 p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2 animate-in fade-in duration-200">
+              <div className="text-[11px] font-mono text-slate-400 font-semibold mb-1">
+                TestCaseCreator Dynamic Test Suite Execution Results:
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {runtimeData.dynamic_tests.map((test, idx) => {
+                  const categoryColors: Record<string, string> = {
+                    functional: "bg-blue-950/80 text-blue-400 border-blue-800/60",
+                    boundary: "bg-amber-950/80 text-amber-400 border-amber-800/60",
+                    safety: "bg-purple-950/80 text-purple-400 border-purple-800/60",
+                    stress: "bg-rose-950/80 text-rose-400 border-rose-800/60",
+                  };
+                  const badgeClass = categoryColors[test.category] || "bg-slate-900 text-slate-400 border-slate-800";
+                  return (
+                    <div
+                      key={idx}
+                      className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 flex items-start justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-mono font-medium text-slate-200 truncate">
+                            {test.name}
+                          </span>
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase ${badgeClass}`}>
+                            {test.category}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                          {test.description}
+                        </p>
+                      </div>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Metric Overview Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {/* Metric 1: Initial Score */}
@@ -199,7 +464,9 @@ export default function Dashboard() {
             <div className="text-xl font-bold font-mono text-rose-400 mt-1">
               {loading ? "..." : `${initialScore.toFixed(1)}`}
             </div>
-            <span className="text-[10px] text-slate-400">Failed: capacity & unhashable</span>
+            <span className="text-[10px] text-slate-400 truncate block">
+              Failed: {v1?.failed_tests && v1.failed_tests.length > 0 ? v1.failed_tests.slice(0, 2).join(", ") : "None"}
+            </span>
           </div>
 
           {/* Metric 2: Final Score */}
@@ -208,7 +475,9 @@ export default function Dashboard() {
             <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
               {loading ? "..." : `${finalScore.toFixed(1)}`}
             </div>
-            <span className="text-[10px] text-emerald-500 font-medium">10/10 tests passed</span>
+            <span className="text-[10px] text-emerald-500 font-medium">
+              {v3?.passed ?? 10}/{v3?.total ?? 10} tests passed
+            </span>
           </div>
 
           {/* Metric 3: Score Gain */}
@@ -247,14 +516,14 @@ export default function Dashboard() {
             </a>
           </div>
 
-          {/* Metric 6: On-Chain Escrow Reward */}
+          {/* Metric 6: DataDAO Reward */}
           <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 col-span-2 md:col-span-1">
-            <span className="text-[10px] font-mono text-slate-500 uppercase block">6. Escrow Reward</span>
+            <span className="text-[10px] font-mono text-slate-500 uppercase block">6. DataDAO Reward</span>
             <div className="text-base font-bold font-mono text-emerald-400 mt-1 flex items-center space-x-1">
               <Coins className="w-4 h-4 text-emerald-400" />
-              <span>{runtimeData?.zk_telemetry?.micro_reward_distributed || "0.0500 ETH"}</span>
+              <span>0.0500 DATA</span>
             </div>
-            <span className="text-[10px] text-slate-400">Settled on Testnet</span>
+            <span className="text-[10px] text-slate-400">Settled on Local DataDAO</span>
           </div>
         </div>
 
@@ -270,7 +539,7 @@ export default function Dashboard() {
             }`}
           >
             <GitCommit className="w-4 h-4" />
-            <span>Panel 1: Execution DAG & Trace</span>
+            <span>Panel 1: Execution DAG &amp; Trace</span>
           </button>
 
           <button
@@ -283,7 +552,7 @@ export default function Dashboard() {
             }`}
           >
             <GitCompare className="w-4 h-4" />
-            <span>Panel 2: Incremental Diffs & Changelog</span>
+            <span>Panel 2: Incremental Diffs &amp; Changelog</span>
           </button>
 
           <button
@@ -296,7 +565,7 @@ export default function Dashboard() {
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Panel 3: Groth16 ZK Telemetry & Escrow</span>
+            <span>Panel 3: Groth16 ZK Telemetry &amp; Escrow</span>
           </button>
 
           <button
@@ -370,4 +639,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

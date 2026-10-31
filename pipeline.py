@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("AutoEvolvePipeline")
 
 
-def run_full_protocol(live: bool = False) -> Dict[str, Any]:
+def run_full_protocol(live: bool = False, custom_prompt: Optional[str] = None) -> Dict[str, Any]:
     """Execute end-to-end AutoEvolve Protocol across Modules 1, 2, and 3.
 
     1. Runs Module 1: Generates V1 -> Critique1 -> V2 -> Critique2 -> V3 in real test sandbox.
@@ -62,6 +62,7 @@ def run_full_protocol(live: bool = False) -> Dict[str, Any]:
     trace_data = run_loop(
         output_path=str(trace_out_module1),
         force_mock=not live,
+        custom_prompt=custom_prompt,
     )
 
     # Ensure root trace copy exists for consistency across tools
@@ -136,6 +137,15 @@ def run_full_protocol(live: bool = False) -> Dict[str, Any]:
         "task_id": trace_data.get("task_id", "lru_cache_01"),
         "protocol_version": "AutoEvolve-v1.0",
         "live_mode": live,
+        "custom_prompt": trace_data.get("custom_prompt"),
+        "dynamic_tests": [
+            {
+                "name": t.get("name", f"test_{idx}"),
+                "category": t.get("category", "functional"),
+                "description": t.get("description", ""),
+            }
+            for idx, t in enumerate(trace_data.get("dynamic_tests") or [])
+        ] if trace_data.get("dynamic_tests") else None,
         "iterations": [
             {
                 "version": "V1",
@@ -383,6 +393,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent2-inherit", action="store_true", help="Execute Agent 2 memory inheritance")
     parser.add_argument("--live", action="store_true", help="Use live Featherless API for generation/critique")
     parser.add_argument("--query", type=str, default="", help="Custom query for Agent 2 memory lookup")
+    parser.add_argument("--custom-prompt", type=str, default="", help="Custom prompt for Generator + TestCaseCreator")
     parser.add_argument("--json", action="store_true", help="Output result strictly as pure JSON")
 
     args = parser.parse_args()
@@ -395,7 +406,7 @@ if __name__ == "__main__":
             print(json.dumps(res, indent=2))
     else:
         # Default action runs full protocol
-        res = run_full_protocol(live=args.live)
+        res = run_full_protocol(live=args.live, custom_prompt=args.custom_prompt or None)
         if args.json:
             print(json.dumps(res))
         else:
