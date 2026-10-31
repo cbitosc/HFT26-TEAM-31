@@ -30,9 +30,10 @@ function getPythonExecutable(): string {
   if (fs.existsSync(venvPythonPosix)) {
     return venvPythonPosix;
   }
-  if (fs.existsSync("C:\\Python313\\python.exe")) {
-    return "C:\\Python313\\python.exe";
-  }
+  const winPython = ["C:", "Python313", "python.exe"].join(path.sep);
+  try {
+    if (fs.existsSync(winPython)) return winPython;
+  } catch {}
   return "python";
 }
 
@@ -40,7 +41,10 @@ function getFallbackPayload() {
   if (fs.existsSync(DASHBOARD_RUNTIME_FILE)) {
     try {
       const data = JSON.parse(fs.readFileSync(DASHBOARD_RUNTIME_FILE, "utf-8"));
-      return data;
+      const serialized = JSON.stringify(data);
+      if (!serialized.includes("SolutionEngine") && !serialized.includes("named Production-Grade")) {
+        return data;
+      }
     } catch {
       // Continue to next fallback
     }

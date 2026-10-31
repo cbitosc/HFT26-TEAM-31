@@ -9,10 +9,16 @@ from core.map_generator import DungeonMap, load_fixed_maps
 from core.engine import simulate
 
 
-def tester(policy: Policy, maps: Optional[List[DungeonMap]] = None) -> TestResult:
+def tester(
+    policy: Policy,
+    maps: Optional[List[DungeonMap]] = None,
+    max_failure_traces: Optional[int] = 50,
+    record_all_runs: bool = False
+) -> TestResult:
     """
     Evaluates a Policy against dungeon maps (default 10 fixed maps x 5 runs = 50 runs).
     Returns an empirical TestResult object with ground-truth survival statistics.
+    Records failure traces up to max_failure_traces (or all runs if record_all_runs=True).
     """
     test_maps = maps if maps is not None else load_fixed_maps()
     runs_per_map = 5 if maps is None else 1  # 50 runs for standard benchmark, fast for Phase 0
@@ -34,6 +40,17 @@ def tester(policy: Policy, maps: Optional[List[DungeonMap]] = None) -> TestResul
 
             if cause == "success":
                 successes += 1
+                if record_all_runs and (max_failure_traces is None or len(failure_traces) < max_failure_traces):
+                    failure_traces.append({
+                        "map_id": m.map_id,
+                        "map_name": m.name,
+                        "path": path,
+                        "cause": "success",
+                        "died_at": None,
+                        "run_seed": run_idx,
+                        "treasure": treasure,
+                        "steps": steps
+                    })
             else:
                 died_at = path[-1] if path else m.start
                 if cause == "lava":
@@ -41,8 +58,8 @@ def tester(policy: Policy, maps: Optional[List[DungeonMap]] = None) -> TestResul
                 elif cause == "monster":
                     monster_deaths += 1
 
-                # Keep a representative sample of failure traces
-                if len(failure_traces) < 8:
+                # Record failure traces
+                if max_failure_traces is None or len(failure_traces) < max_failure_traces:
                     failure_traces.append({
                         "map_id": m.map_id,
                         "map_name": m.name,

@@ -28,6 +28,10 @@ import ExecutionTree, { IterationData } from "./ExecutionTree";
 import DiffViewer from "./DiffViewer";
 import ZkTelemetryPanel from "./ZkTelemetryPanel";
 import Agent2MemoryTab, { Agent2InheritResult } from "./Agent2MemoryTab";
+import SimulationTab from "./SimulationTab";
+import Agent1DungeonComponent from "./Agent1DungeonComponent";
+import Agent2DungeonComponent from "./Agent2DungeonComponent";
+import { Compass, Swords } from "lucide-react";
 
 export interface DynamicTestCase {
   name: string;
@@ -105,7 +109,15 @@ const PRESET_PROMPTS = [
 ];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"tree" | "diff" | "zk" | "agent2">("tree");
+  const [activeTab, setActiveTab] = useState<"tree" | "diff" | "zk" | "agent2" | "simulation" | "agent1-dungeon" | "agent2-dungeon">("tree");
+  const [simData, setSimData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/simulation")
+      .then((res) => res.ok ? res.json() : fetch("/simulation_data.json").then((r) => r.json()))
+      .then((data) => setSimData(data))
+      .catch((err) => console.error("Could not preload simulation data:", err));
+  }, []);
   const [runtimeData, setRuntimeData] = useState<DashboardRuntimeData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [runningLoop, setRunningLoop] = useState<boolean>(false);
@@ -592,6 +604,38 @@ export default function Dashboard() {
             <BrainCircuit className="w-4 h-4" />
             <span>Panel 4: Agent 2 Memory Inheritance</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("agent1-dungeon")}
+            className={`flex items-center space-x-2 py-3 px-4 text-xs font-medium border-b-2 transition ${
+              activeTab === "agent1-dungeon"
+                ? "border-blue-500 text-blue-400 font-semibold"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Swords className="w-4 h-4 text-blue-400" />
+            <span>Panel 5: Agent 1 Dungeon (V1 &rarr; V4)</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-blue-500/10 text-blue-300 border border-blue-500/30">
+              Task 1
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("agent2-dungeon")}
+            className={`flex items-center space-x-2 py-3 px-4 text-xs font-medium border-b-2 transition ${
+              activeTab === "agent2-dungeon"
+                ? "border-emerald-500 text-emerald-400 font-semibold"
+                : "border-transparent text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Compass className="w-4 h-4 text-emerald-400" />
+            <span>Panel 6: Agent 2 Single-Shot (Memory Proof)</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+              Pillar 4
+            </span>
+          </button>
         </div>
 
         {/* Tab Content Panels */}
@@ -642,6 +686,50 @@ export default function Dashboard() {
                   return json;
                 }}
               />
+            )}
+
+            {activeTab === "simulation" && <SimulationTab />}
+
+            {activeTab === "agent1-dungeon" && (
+              simData ? (
+                <Agent1DungeonComponent
+                  maps={simData.maps}
+                  generations={simData.task1_generations}
+                  onReRunTask1={async () => {
+                    await fetch("/api/simulation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "task1" }),
+                    });
+                    const r = await fetch("/api/simulation");
+                    if (r.ok) setSimData(await r.json());
+                  }}
+                />
+              ) : (
+                <SimulationTab />
+              )
+            )}
+
+            {activeTab === "agent2-dungeon" && (
+              simData ? (
+                <Agent2DungeonComponent
+                  maps={simData.maps}
+                  agent2={simData.agent2}
+                  totalFailureTraces={simData.total_failure_traces_loaded}
+                  comparisonImage={simData.v1_vs_agent2_image}
+                  onRunAgent2={async () => {
+                    await fetch("/api/simulation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "task2" }),
+                    });
+                    const r = await fetch("/api/simulation");
+                    if (r.ok) setSimData(await r.json());
+                  }}
+                />
+              ) : (
+                <SimulationTab />
+              )
             )}
           </div>
         )}

@@ -391,12 +391,49 @@ def run_agent2_inheritance(query: Optional[str] = None) -> Dict[str, Any]:
     return result
 
 
+def execute_task1_dungeon(live: bool = False):
+    """Runs Task 1 (Agent 1): Phase 0 Genesis + Phase 1 G->T->C loop until convergence, building memory ledger."""
+    logger.info("=" * 65)
+    logger.info(" Executing Task 1: Dungeon Agent 1 Genesis & G-T-C Evolution")
+    logger.info("=" * 65)
+    from module1.agent.task2_dungeon_agent import run_task1_dungeon
+    return run_task1_dungeon(live=live)
+
+
+def execute_task2_dungeon(live: bool = False):
+    """Runs Task 2 (Agent 2): Single-shot dungeon solve using Task 1 memory.
+    Fails with 'Run Task 1 first' if evolution ledger does not exist.
+    """
+    logger.info("=" * 65)
+    logger.info(" Executing Task 2: Dungeon Agent 2 Single-Shot Memory Learner")
+    logger.info("=" * 65)
+    from module1.agent.task2_dungeon_agent import run_task2_dungeon
+    return run_task2_dungeon(live=live)
+
+
+def execute_dungeon_full_pipeline(live: bool = False):
+    """Executes Task 1 followed by Task 2 end-to-end in one command sequence."""
+    logger.info("=" * 65)
+    logger.info(" Executing Full Dungeon Pipeline: Task 1 (Agent 1) -> Task 2 (Agent 2)")
+    logger.info("=" * 65)
+    t1_res = execute_task1_dungeon(live=live)
+    t2_res = execute_task2_dungeon(live=live)
+    return {
+        "status": "DUNGEON_PIPELINE_COMPLETE",
+        "task1": t1_res,
+        "task2": t2_res
+    }
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="AutoEvolve Protocol Integration Pipeline")
     parser.add_argument("--run-agent", action="store_true", help="Execute complete agent loop + ZK + IPFS")
     parser.add_argument("--agent2-inherit", action="store_true", help="Execute Agent 2 memory inheritance")
+    parser.add_argument("--task1", action="store_true", help="Execute Task 1: Dungeon Crawler Phase 0 + Phase 1 (Agent 1)")
+    parser.add_argument("--task2", action="store_true", help="Execute Task 2: Dungeon Crawler Single-Shot (Agent 2)")
+    parser.add_argument("--dungeon", action="store_true", help="Execute Task 1 -> Task 2 Dungeon pipeline end-to-end")
     parser.add_argument("--live", action="store_true", help="Use live Featherless API for generation/critique")
     parser.add_argument("--query", type=str, default="", help="Custom query for Agent 2 memory lookup")
     parser.add_argument("--custom-prompt", type=str, default="", help="Custom prompt for Generator + TestCaseCreator")
@@ -404,7 +441,31 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.agent2_inherit:
+    if args.task1:
+        res = execute_task1_dungeon(live=args.live)
+        if args.json:
+            print(json.dumps(res))
+        else:
+            print(json.dumps(res, indent=2))
+    elif args.task2:
+        try:
+            res = execute_task2_dungeon(live=args.live)
+            if args.json:
+                print(json.dumps(res))
+            else:
+                print(json.dumps(res, indent=2))
+        except RuntimeError as e:
+            if str(e) == "Run Task 1 first":
+                print(f"[ERROR] {e}")
+                sys.exit(1)
+            raise
+    elif args.dungeon:
+        res = execute_dungeon_full_pipeline(live=args.live)
+        if args.json:
+            print(json.dumps(res))
+        else:
+            print(json.dumps(res, indent=2))
+    elif args.agent2_inherit:
         res = run_agent2_inheritance(query=args.query)
         if args.json:
             print(json.dumps(res))

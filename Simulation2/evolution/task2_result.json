@@ -1,0 +1,36 @@
+{
+  "status": "SUCCESS",
+  "agent": "Agent 2",
+  "task": "Task 2 Single-Shot Dungeon Navigation",
+  "memory_versions_loaded": 4,
+  "total_failure_traces_loaded": 200,
+  "policy": {
+    "version": 1,
+    "COSTS": {
+      "lava": 100,
+      "monster": 50,
+      "treasure": -15,
+      "step": 1
+    },
+    "avoidance_radius": 2,
+    "changelog": "Derived from Agent 1 memory: Avoided V1 monster ambush death at [6, 3] by setting monster cost to 50 and radius to 2; avoided V2 lethal lava burn at [6, 1] by setting lava cost to 100; solved V3 treasure deficit (0 gold) by setting treasure incentive to -15. Resulting COSTS: lava=100, monster=50, treasure=-15, step=1."
+  },
+  "test_result": {
+    "policy_version": 1,
+    "success_rate": 1.0,
+    "death_by_lava_pct": 0.0,
+    "death_by_monster_pct": 0.0,
+    "avg_treasure": 3.0,
+    "avg_steps": 27,
+    "failure_traces": [],
+    "score": 0.97
+  },
+  "single_attempt_passed": true,
+  "ablation": {
+    "without_memory_success_rate": 0.22,
+    "with_memory_success_rate": 1.0,
+    "delta_gain_percentage": 78.0,
+    "ablation_passed": true
+  },
+  "reasoning": "Derived from Agent 1 memory: Avoided V1 monster ambush death at [6, 3] by setting monster cost to 50 and radius to 2; avoided V2 lethal lava burn at [6, 1] by setting lava cost to 100; solved V3 treasure deficit (0 gold) by setting treasure incentive to -15. Resulting COSTS: lava=100, monster=50, treasure=-15, step=1."
+}

@@ -108,8 +108,14 @@ class TestCaseCreator:
             return self._build_calculator_tests()
 
         # Domain: LRU Cache / Benchmark
-        if ("lru" in lower_prompt or "least recently used" in lower_prompt) and not any(kw in lower_prompt for kw in ["rate", "ring", "trie", "min", "prime"]):
+        if ("lru" in lower_prompt or "least recently used" in lower_prompt or "lrucache" in lower_prompt) and not any(
+            kw in lower_prompt for kw in ["rate_limiter", "rate limiter", "token bucket", "ring buffer", "circular buffer", "trie", "min stack", "minstack"]
+        ):
             return self._build_lru_tests()
+
+        # Domain: Power Of Two
+        if any(kw in lower_prompt for kw in ["power of 2", "power of two", "is_power_of_two", "power_of_two", "powerof2", "poweroftwo"]):
+            return self._build_power_of_two_tests()
 
         # Generic Domain for arbitrary custom user prompts
         try:
@@ -124,6 +130,102 @@ class TestCaseCreator:
 
         return self._build_generic_tests(cname, prompt)
 
+
+    def _build_power_of_two_tests(self) -> List[TestCase]:
+        """Synthesizes verified unit tests for PowerOfTwo."""
+        return [
+            TestCase(
+                id="positive_powers_functional",
+                category="functional",
+                description="Accurately identifies positive powers of two (1, 2, 4, 8, 16, 32, 64, 1024, 2**16)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+for p in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 65536]:
+    assert checker.is_power_of_two(p) is True, f"{p} should be power of two"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="non_powers_functional",
+                category="functional",
+                description="Accurately identifies non-powers of two (3, 5, 6, 7, 9, 10, 15, 18, 100)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+for c in [3, 5, 6, 7, 9, 10, 12, 15, 18, 24, 100, 1000]:
+    assert checker.is_power_of_two(c) is False, f"{c} should not be power of two"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="negative_and_zero_boundary",
+                category="boundary",
+                description="Boundary handling: zero and negative numbers (0, -1, -2, -4, -8) are never powers of two",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+for val in [0, -1, -2, -4, -8, -16, -1024]:
+    assert checker.is_power_of_two(val) is False, f"{val} must return False"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="type_safety_boundary",
+                category="safety",
+                description="Defensive handling: floats, None, strings, and booleans safely return False without crashing",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+for invalid in [None, "16", "power", [4], {2: 4}, True, False, 3.5, 4.01]:
+    try:
+        res = checker.is_power_of_two(invalid)
+        assert res is False, f"Expected False for {invalid}, got {res}"
+    except Exception as e:
+        assert False, f"Unexpected exception on {invalid}: {e}"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="large_powers_stress",
+                category="stress",
+                description="Evaluates large numbers (2**64, 2**128, 2**256) within 0.1s latency limit",
+                script="""import sys, time
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+t0 = time.monotonic()
+for exp in [32, 64, 128, 256, 512]:
+    val = 1 << exp
+    assert checker.is_power_of_two(val) is True
+    assert checker.is_power_of_two(val + 1) is False
+assert time.monotonic() - t0 < 0.1, "Evaluation exceeded latency limit"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety_synchronization_lock",
+                category="safety",
+                description="Verifies thread synchronization lock attribute exists for concurrency safety",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PowerOfTwo
+
+checker = PowerOfTwo()
+assert hasattr(checker, "_lock"), "Missing thread synchronization lock (_lock)"
+sys.exit(0)
+""",
+            ),
+        ]
 
     def _build_prime_tests(self) -> List[TestCase]:
         """Synthesizes verified unit tests for PrimeChecker."""

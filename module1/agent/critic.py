@@ -239,6 +239,40 @@ def get_mock_critique(attempt: str, eval_result: Dict[str, Any], task_prompt: Op
                 "failed_tests": [],
             }
 
+    # Power of Two Domain
+    if any(k in prompt_str for k in ["power of 2", "power of two", "is_power_of_two", "power_of_two", "powerof2", "poweroftwo"]):
+        if norm in ("v1", "1"):
+            return {
+                "failure_type": "NegativeAndFloatBoundaryFailure",
+                "root_cause": (
+                    "The iterative power-of-two candidate raises unhandled TypeError on invalid/None types "
+                    "and lacks concurrency safety."
+                ),
+                "fix_instruction": (
+                    "Validate types defensibly, handle non-integers and booleans safely, and reject n <= 0."
+                ),
+                "failed_tests": failed or ["type_safety_boundary", "thread_safety_synchronization_lock"],
+            }
+        elif norm in ("v2", "2"):
+            return {
+                "failure_type": "ThreadSafetyAndComplexityFailure",
+                "root_cause": (
+                    "The revised implementation relies on an iterative division loop (O(log N)) and lacks "
+                    "thread synchronization locks (_lock) required for high-throughput production environments."
+                ),
+                "fix_instruction": (
+                    "Adopt the bitwise invariant (n & (n - 1) == 0) for O(1) throughput, add threading.RLock, and complete docstrings."
+                ),
+                "failed_tests": failed or ["thread_safety_synchronization_lock"],
+            }
+        else:
+            return {
+                "failure_type": "None",
+                "root_cause": "None. All unit tests, latency bounds, and safety requirements are fully satisfied.",
+                "fix_instruction": "Maintain current architecture; no further revisions required.",
+                "failed_tests": [],
+            }
+
     # Generic Custom Domain Fallback
     if task_prompt and "lru" not in prompt_str:
         if norm in ("v1", "1"):

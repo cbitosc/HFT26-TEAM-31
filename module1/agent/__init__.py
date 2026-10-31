@@ -41,6 +41,18 @@ except ImportError:
     from module1.agent.dynamic_synthesizer import DynamicProgramSynthesizer
     from module1.agent.graph import AutoEvolveState, build_autoevolve_graph, export_graph_mermaid, run_graph_loop
 
+try:
+    from module1.agent.task2_dungeon_agent import (
+        Task1Memory,
+        Task1MemoryLoader,
+        Agent2SingleShotGenerator,
+        load_task1_memory,
+        run_task1_dungeon,
+        run_task2_dungeon,
+    )
+except ImportError:
+    pass
+
 __all__ = [
     "TASK_PROMPT",
     "HIDDEN_TESTS",
@@ -55,5 +67,10 @@ __all__ = [
     "build_autoevolve_graph",
     "export_graph_mermaid",
     "run_graph_loop",
+    "Task1Memory",
+    "Task1MemoryLoader",
+    "Agent2SingleShotGenerator",
+    "load_task1_memory",
+    "run_task1_dungeon",
+    "run_task2_dungeon",
 ]
-

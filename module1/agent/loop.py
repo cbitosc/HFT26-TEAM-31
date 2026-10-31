@@ -58,12 +58,18 @@ def infer_domain_metadata(
 ) -> Dict[str, Any]:
     """Infers dynamic architecture titles, prompt commitments, and diff summaries tailored to the task."""
     lower = active_prompt.lower()
-    is_lru = ("lru" in lower or "least recently used" in lower) and not any(k in lower for k in ["rate", "ring", "trie", "stack"])
+    is_lru = ("lru" in lower or "least recently used" in lower or "lrucache" in lower) and not any(
+        k in lower for k in ["rate_limiter", "rate limiter", "token bucket", "ring buffer", "circular buffer", "trie", "min stack", "minstack"]
+    )
 
     if is_lru:
         arch_v1 = "Linear Scan List"
         arch_v2 = "collections.OrderedDict"
         arch_v3 = "Doubly Linked List (class Node)"
+    elif any(k in lower for k in ["power of 2", "power of two", "is_power_of_two", "power_of_two", "powerof2", "poweroftwo"]):
+        arch_v1 = "Iterative Division Prototype (Baseline O(log N))"
+        arch_v2 = "Boundary Guarded Iteration (Negative & Float Checks)"
+        arch_v3 = "Bitwise Power-of-Two Engine (O(1) Invariant + Strict Typing)"
     elif any(k in lower for k in ["prime", "primality", "is_prime"]):
         arch_v1 = "Trial Division Primality Algorithm (Baseline O(N))"
         arch_v2 = "Square Root Optimization & Boundary Guards (O(sqrt(N)))"
@@ -111,11 +117,14 @@ def infer_domain_metadata(
             except Exception:
                 match = re.search(r"class\s+([A-Za-z0-9_]+)", active_prompt)
                 cname = match.group(1) if match else "SolutionEngine"
-        if not cname or cname == "CustomSolution":
-            cname = "SolutionEngine"
-        arch_v1 = f"{cname} Baseline Prototype"
-        arch_v2 = f"{cname} Optimized Revision"
-        arch_v3 = f"{cname} Production-Grade Architecture"
+        if not cname or cname.lower() in ("customsolution", "solutionengine", "named", "class", "def"):
+            arch_v1 = "Algorithmic Baseline Prototype"
+            arch_v2 = "Optimized Iterative Revision"
+            arch_v3 = "Production-Grade Solution Architecture"
+        else:
+            arch_v1 = f"{cname} Baseline Prototype"
+            arch_v2 = f"{cname} Optimized Revision"
+            arch_v3 = f"{cname} Production-Grade Architecture"
 
     lines_v1_v2_add = len([l for l in diff_v1_v2.splitlines() if l.startswith("+") and not l.startswith("+++")])
     lines_v1_v2_rem = len([l for l in diff_v1_v2.splitlines() if l.startswith("-") and not l.startswith("---")])
