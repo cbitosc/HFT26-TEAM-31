@@ -40,7 +40,7 @@ class TestCaseCreator:
     def __init__(
         self,
         task_prompt: Optional[str] = None,
-        model: str = "Qwen/Qwen2.5-Coder-32B-Instruct",
+        model: str = "deepseek-ai/DeepSeek-V4.1-Flash-1017",
     ) -> None:
         self.task_prompt = task_prompt or ""
         self.model = model
@@ -332,6 +332,19 @@ assert time.perf_counter() - t0 < 0.85
 sys.exit(0)
 """,
             ),
+            TestCase(
+                id="thread_safety_lock",
+                category="safety",
+                description="Ensures thread-safe synchronization lock is configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import RingBuffer
+
+rb = RingBuffer(5)
+assert hasattr(rb, "_lock"), "RingBuffer must maintain internal synchronization lock"
+sys.exit(0)
+""",
+            ),
         ]
 
     def _build_trie_tests(self) -> List[TestCase]:
@@ -415,6 +428,21 @@ assert time.perf_counter() - t0 < 0.85
 sys.exit(0)
 """,
             ),
+            TestCase(
+                id="word_count_check",
+                category="functional",
+                description="Accurately tracks distinct words inserted into the Trie",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import Trie
+
+t = Trie()
+t.insert("apple")
+t.insert("banana")
+assert hasattr(t, "count") and t.count() == 2
+sys.exit(0)
+""",
+            ),
         ]
 
     def _build_min_stack_tests(self) -> List[TestCase]:
@@ -482,6 +510,21 @@ for i in range(10000):
     ms.push(i)
 assert ms.getMin() == 0
 assert time.perf_counter() - t0 < 0.85
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="size_tracking_check",
+                category="functional",
+                description="Accurately tracks number of elements on stack",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import MinStack
+
+ms = MinStack()
+ms.push(10)
+ms.push(20)
+assert hasattr(ms, "size") and ms.size() == 2
 sys.exit(0)
 """,
             ),

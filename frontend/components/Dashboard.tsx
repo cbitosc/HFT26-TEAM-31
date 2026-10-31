@@ -90,6 +90,18 @@ const PRESET_PROMPTS = [
     prompt: "Implement a thread-safe Circular Ring Buffer with fixed capacity and overflow protection",
     desc: "Dynamically synthesizes circular wrap-around, overflow, and concurrent lock tests.",
   },
+  {
+    id: "trie",
+    label: "Prefix Tree (Trie)",
+    prompt: "Implement a Trie prefix tree with insert, search, and startsWith",
+    desc: "Dynamically synthesizes prefix matching, word count, and case sensitivity tests.",
+  },
+  {
+    id: "min_stack",
+    label: "Min Stack (O(1))",
+    prompt: "Implement a Min Stack with O(1) push, pop, top, and getMin",
+    desc: "Dynamically synthesizes constant-time minimum tracking and empty pop boundaries.",
+  },
 ];
 
 export default function Dashboard() {

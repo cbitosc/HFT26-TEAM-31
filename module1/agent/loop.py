@@ -133,7 +133,7 @@ def run_loop(
     # Stage 2: First Iterative Revision & Sandbox Evaluation (V2)
     # -------------------------------------------------------------
     print("\n[Stage 2] Generating V2 Revised Solution (guided by Critique 1)...")
-    code_v2 = generate_code(active_prompt, critique=critique_1, attempt="v2", force_mock=force_mock)
+    code_v2 = generate_code(active_prompt, critique=critique_1, attempt="v2", previous_code=code_v1, force_mock=force_mock)
 
     print("[Stage 2] Executing Subprocess Sandbox Unit-Test Suite on V2...")
     v2_eval = evaluate_code(code_v2, tests=active_tests)
@@ -148,7 +148,7 @@ def run_loop(
     # Stage 3: Second Iterative Revision & Sandbox Evaluation (V3)
     # -------------------------------------------------------------
     print("\n[Stage 3] Generating V3 Production-Grade Solution (guided by Critique 2)...")
-    code_v3 = generate_code(active_prompt, critique=critique_2, attempt="v3", force_mock=force_mock)
+    code_v3 = generate_code(active_prompt, critique=critique_2, attempt="v3", previous_code=code_v2, force_mock=force_mock)
 
     print("[Stage 3] Executing Subprocess Sandbox Unit-Test Suite on V3...")
     v3_eval = evaluate_code(code_v3, tests=active_tests)
