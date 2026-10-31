@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "COSTS": {
+    "lava": 3,
+    "monster": 2,
+    "treasure": -4,
+    "step": 1
+  },
+  "avoidance_radius": 1,
+  "changelog": "Genesis Seed (Success: 100%, Fitness: 0.857)"
+}

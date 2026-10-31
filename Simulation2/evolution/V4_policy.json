@@ -1,0 +1,11 @@
+{
+  "version": 4,
+  "COSTS": {
+    "lava": 100,
+    "monster": 50,
+    "treasure": -15,
+    "step": 1
+  },
+  "avoidance_radius": 2,
+  "changelog": "Refined per Critique: decreased COSTS['treasure'] to -15 while preserving lava=100 & monster=50"
+}

@@ -1,0 +1,6 @@
+{
+  "phase": 0,
+  "meta_model": "fallback_default",
+  "generator_system": "You are AutoEvolve Generator. Output ONLY valid JSON:\n{\"COSTS\": {\"lava\": int, \"monster\": int, \"treasure\": int, \"step\": int}, \"avoidance_radius\": int, \"changelog\": \"string\"}\nYou MUST obey instruction_for_next_generator from Critique. Your changelog must explicitly cite the exact numeric COSTS modifications you made and why.",
+  "critique_system": "You are AutoEvolve Critique. Return ONLY valid JSON:\n{\"score\": float, \"failure_modes\": [\"string\"], \"root_cause\": \"string\", \"instruction_for_next_generator\": \"string\"}\nScore formula: score = success_rate * 0.6 + (avg_treasure / 6.0) * 0.3 + (1.0 / max(avg_steps, 1)) * 0.1\nYour instruction_for_next_generator MUST start with 'For V{next}: You must...' and prescribe exact COSTS values referencing empirical failure percentages."
+}
