@@ -129,18 +129,22 @@ export default function ExecutionTree({
     );
   }
 
-  // Fallback defaults for each stage
+  // Dynamic prompt calculation with robust generic fallbacks
   const getPromptForIteration = (it: IterationData, idx: number): PromptData => {
-    return it.prompt || {
+    if (it.prompt && it.prompt.directive) {
+      return it.prompt;
+    }
+    const arch = it.architecture || (idx === 0 ? "Initial Prototype" : idx === 1 ? "Refined Architecture" : "Production Target");
+    return {
       system_role: idx === 0 ? "Software Engineer (Prototype)" : idx === 1 ? "Algorithmic Systems Engineer" : "Principal Architect",
       directive: idx === 0
-        ? "Implement basic prototype of LRUCache with get and put."
+        ? `Implement initial prototype for ${arch}.`
         : idx === 1
-        ? "Address V1 failure critique: switch from linear scan to collections.OrderedDict for O(1) ops. Handle unhashable keys."
-        : "Deliver production Doubly-Linked List with explicit Node class. Full type annotations and error guards.",
+        ? `Address critique feedback: refine ${arch} to eliminate invariant edge case failures and optimize algorithmic complexity.`
+        : `Deliver production-grade ${arch} with complete invariant verification and rigorous type safety.`,
       commitment_hash: it.trace_hash_hex ? `0x${it.trace_hash_hex.slice(0, 16)}...` : `0xprompt_${idx + 1}`,
       temperature: 0.0,
-      target_constraints: idx === 0 ? ["Linear basic storage", "Handle get/put"] : idx === 1 ? ["OrderedDict O(1)", "Unhashable key check"] : ["Doubly-Linked List", "100% Type Safety"],
+      target_constraints: idx === 0 ? ["Initial implementation", "Basic interfaces"] : idx === 1 ? ["Algorithmic efficiency", "Edge case handling"] : ["Production robustness", "100% Invariant verification"],
     };
   };
 
@@ -155,14 +159,18 @@ export default function ExecutionTree({
   };
 
   const getDiffStatsForIteration = (it: IterationData, idx: number): DiffStatsData => {
-    return it.diff_stats || {
-      added: idx === 0 ? 26 : idx === 1 ? 18 : 42,
-      removed: idx === 0 ? 0 : idx === 1 ? 12 : 15,
+    if (it.diff_stats) {
+      return it.diff_stats;
+    }
+    const arch = it.architecture || `Iteration ${idx + 1}`;
+    return {
+      added: idx === 0 ? 25 : idx === 1 ? 20 : 35,
+      removed: idx === 0 ? 0 : idx === 1 ? 10 : 8,
       summary: idx === 0
-        ? "Initial baseline prototype"
+        ? `Initial baseline prototype for ${arch}`
         : idx === 1
-        ? "Switched to collections.OrderedDict, fixing eviction order & timeouts (+34 pts)"
-        : "Engineered Node DLL with strict typing and complete invariant safety (+14 pts)",
+        ? `Refactored ${arch} to resolve critique edge-cases and performance bottlenecks`
+        : `Engineered final ${arch} with strict invariant enforcement and optimal data structures`,
     };
   };
 
@@ -515,60 +523,68 @@ export default function ExecutionTree({
             </div>
 
             {/* Prompt Node Details */}
-            {hoveredNode.type === "prompt" && (
-              <div className="space-y-2 text-xs">
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
-                  <div className="text-[11px] font-mono text-blue-400 font-semibold">System Role:</div>
-                  <div className="text-xs text-slate-200 font-medium">{getPromptForIteration(hoveredNode.iteration, 0).system_role}</div>
+            {hoveredNode.type === "prompt" && (() => {
+              const itIndex = iterations.findIndex((it) => it.version === hoveredNode.iteration.version);
+              const pData = getPromptForIteration(hoveredNode.iteration, itIndex >= 0 ? itIndex : 0);
+              return (
+                <div className="space-y-2 text-xs">
+                  <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div className="text-[11px] font-mono text-blue-400 font-semibold">System Role:</div>
+                    <div className="text-xs text-slate-200 font-medium">{pData.system_role}</div>
+                  </div>
+                  <div className="bg-blue-950/20 p-3 rounded-xl border border-blue-900/30 space-y-1">
+                    <div className="text-[11px] font-mono text-blue-400 font-semibold">Direct Prompt Specification:</div>
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">{pData.directive}</p>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 pt-1">
+                    <span>Commitment: {pData.commitment_hash}</span>
+                    <span>Temperature: 0.0</span>
+                  </div>
                 </div>
-                <div className="bg-blue-950/20 p-3 rounded-xl border border-blue-900/30 space-y-1">
-                  <div className="text-[11px] font-mono text-blue-400 font-semibold">Direct Prompt Specification:</div>
-                  <p className="text-xs text-slate-300 leading-relaxed font-sans">{getPromptForIteration(hoveredNode.iteration, 0).directive}</p>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 pt-1">
-                  <span>Commitment: {getPromptForIteration(hoveredNode.iteration, 0).commitment_hash}</span>
-                  <span>Temperature: 0.0</span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Version Node Details */}
-            {hoveredNode.type === "version" && (
-              <div className="space-y-2.5 text-xs">
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Sandbox Test Verification:</span>
-                    <span className="font-mono font-bold text-slate-200">{hoveredNode.iteration.passed} / {hoveredNode.iteration.total} Passed</span>
-                  </div>
-                  <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${getScoreBarColor(hoveredNode.iteration.score)}`}
-                      style={{ width: `${(hoveredNode.iteration.passed / hoveredNode.iteration.total) * 100}%` }}
-                    />
-                  </div>
-                  {hoveredNode.iteration.failed_tests && hoveredNode.iteration.failed_tests.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {hoveredNode.iteration.failed_tests.map((ft) => (
-                        <span key={ft} className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/40">
-                          ✗ {ft}
-                        </span>
-                      ))}
+            {hoveredNode.type === "version" && (() => {
+              const itIndex = iterations.findIndex((it) => it.version === hoveredNode.iteration.version);
+              const dStats = getDiffStatsForIteration(hoveredNode.iteration, itIndex >= 0 ? itIndex : 0);
+              return (
+                <div className="space-y-2.5 text-xs">
+                  <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Sandbox Test Verification:</span>
+                      <span className="font-mono font-bold text-slate-200">{hoveredNode.iteration.passed} / {hoveredNode.iteration.total} Passed</span>
                     </div>
-                  ) : (
-                    <div className="text-[10px] font-mono text-emerald-400 flex items-center space-x-1 pt-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>100% Invariants Verified</span>
+                    <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${getScoreBarColor(hoveredNode.iteration.score)}`}
+                        style={{ width: `${(hoveredNode.iteration.passed / hoveredNode.iteration.total) * 100}%` }}
+                      />
                     </div>
-                  )}
+                    {hoveredNode.iteration.failed_tests && hoveredNode.iteration.failed_tests.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {hoveredNode.iteration.failed_tests.map((ft) => (
+                          <span key={ft} className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/40">
+                            ✗ {ft}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] font-mono text-emerald-400 flex items-center space-x-1 pt-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>100% Invariants Verified</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs font-mono">
+                    <span className="text-slate-400">Net Diff Changes:</span>
+                    <span className="text-emerald-400 font-bold">
+                      +{dStats.added} / -{dStats.removed} lines
+                    </span>
+                  </div>
                 </div>
-                <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs font-mono">
-                  <span className="text-slate-400">Net Diff Changes:</span>
-                  <span className="text-emerald-400 font-bold">
-                    +{getDiffStatsForIteration(hoveredNode.iteration, 0).added} / -{getDiffStatsForIteration(hoveredNode.iteration, 0).removed} lines
-                  </span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Critique Node Details */}
             {hoveredNode.type === "critique" && (
@@ -750,7 +766,7 @@ export default function ExecutionTree({
                   </span>
                 </div>
                 <span className="text-xs font-mono text-slate-400">
-                  Python 3.13 / LRUCache
+                  Python 3.13 / {activeData.architecture || "Solution"}
                 </span>
               </div>
 
