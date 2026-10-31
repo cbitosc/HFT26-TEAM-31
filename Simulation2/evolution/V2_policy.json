@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "COSTS": {
+    "lava": 3,
+    "monster": 50,
+    "treasure": -1,
+    "step": 1
+  },
+  "avoidance_radius": 2,
+  "changelog": "Refined per Critique: increased COSTS['monster'] to 50 & avoidance_radius to 2, reset treasure incentive to cautious -1"
+}

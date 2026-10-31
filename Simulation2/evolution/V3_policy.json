@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "COSTS": {
+    "lava": 100,
+    "monster": 50,
+    "treasure": -1,
+    "step": 1
+  },
+  "avoidance_radius": 2,
+  "changelog": "Refined per Critique: increased COSTS['lava'] to 100 to eliminate shortcut deaths"
+}

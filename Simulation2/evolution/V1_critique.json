@@ -1,0 +1,9 @@
+{
+  "score": 0.232,
+  "failure_modes": [
+    "Monster ambushes",
+    "Greedy pathing into threat zones"
+  ],
+  "root_cause": "Agent greedily cut close to monsters with low avoidance radius and low monster penalty.",
+  "instruction_for_next_generator": "For V2: You must increase COSTS['monster'] to 50 and avoidance_radius to 2. V1 died 78% to monsters because it goes greedy to treasure ignoring monsters."
+}
