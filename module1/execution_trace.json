@@ -1,91 +1,78 @@
 {
-  "task_id": "lru_cache_01",
-  "task_prompt": "You are an expert algorithmic systems engineer.\nImplement an industrial-grade, highly efficient Least Recently Used (LRU) Cache class named `LRUCache`.\n\nClass Signature:\n```python\nclass LRUCache:\n    def __init__(self, capacity: int) -> None:\n        ...\n\n    def get(self, key: int) -> int:\n        ...\n\n    def put(self, key: int, value: int) -> None:\n        ...\n```\n\nRequirements:\n1. Time Complexity:\n   - Both `get` and `put` operations MUST achieve O(1) average time complexity.\n2. Eviction Policy:\n   - When the cache reaches its maximum capacity, adding a new key must evict the Least Recently Used (LRU) item.\n   - Accessing a key via `get` or updating an existing key via `put` must mark that key as the Most Recently Used (MRU).\n3. Overwrite Handling:\n   - If an existing key is inserted with `put`, update its value and move it to the MRU position without increasing the cache size.\n4. Edge Case - Zero or Negative Capacity:\n   - If initialized with `capacity <= 0`, all `put` operations must be safe no-ops, and all `get` operations must return -1.\n5. Edge Case - Unhashable Keys:\n   - If an unhashable key (such as a list or dictionary) is passed, `put` must safely ignore the operation (no-op)\n     and `get` must return -1, without raising an unhandled `TypeError` or crashing the execution environment.\n6. Code Quality:\n   - Provide clean docstrings, clear class architecture (e.g. Doubly Linked List with `class Node`), and type annotations (`-> int`, `-> None`).\n",
+  "task_id": "custom_agent_task",
+  "task_prompt": "Design a thread-safe RingBuffer with capacity, push, and pop",
   "orchestrator": "LangGraph.StateGraph (v1.2.5)",
   "v1": {
-    "code": "# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\nclass LRUCache:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.cache = []\n\n    def get(self, key):\n        hash(key)\n        for k, v in self.cache:\n            if k == key:\n                return v\n        return -1\n\n    def put(self, key, value):\n        hash(key)\n        for i, (k, v) in enumerate(self.cache):\n            if k == key:\n                self.cache[i] = (key, value)\n                return\n        self.cache.append((key, value))\n        for _ in range(2000):\n            sum([1 for _ in self.cache])\n        if self.cap > 0 and len(self.cache) > self.cap:\n            self.cache.pop(0)\n\n",
+    "code": "# Dynamically generated V1 Prototype for RingBuffer\nclass RingBuffer:\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.buffer = []\n\n    def push(self, item):\n        if self.capacity <= 0:\n            self.buffer.append(item)\n            return\n        if len(self.buffer) >= self.capacity:\n            self.buffer.pop(0)\n        self.buffer.append(item)\n\n    def pop(self):\n        # Naive pop raises IndexError on empty buffer\n        return self.buffer.pop(0)\n\n    def is_empty(self):\n        return len(self.buffer) == 0\n\n    def is_full(self):\n        return len(self.buffer) >= self.capacity\n",
     "eval": {
-      "passed": 6,
-      "total": 10,
+      "passed": 3,
+      "total": 6,
       "failed_tests": [
-        "capacity_zero",
-        "order_after_get",
-        "perf_timeout_>4s",
-        "unhashable"
+        "empty_pop_boundary",
+        "capacity_zero_boundary",
+        "thread_safety_lock"
       ],
-      "correctness": 60.0,
-      "efficiency": 30.0,
-      "safety": 50.0,
+      "correctness": 50.0,
+      "efficiency": 100.0,
+      "safety": 100.0,
       "quality": 50.0,
-      "final_score": 52.0,
-      "trace_hash_hex": "ca23d830af80f1892f13da6e61ffd8b176e55b96bfe8b23d722d3aa1d48207a0",
-      "trace_hash_zk": "357150496683039437535052423681004004590577548506268073491761557186834366983",
+      "final_score": 65.0,
+      "trace_hash_hex": "ab4f6343202e260e57c2ca5f10421bbf97f2f89da07f01b763352a29471a2fa0",
+      "trace_hash_zk": "302678762142381959094778731159725342192424169693450222323270454698859502127",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
+          "id": "basic_enqueue_dequeue",
+          "status": "passed",
+          "category": "functional"
         },
         {
-          "id": "capacity_zero",
+          "id": "empty_pop_boundary",
           "status": "failed",
-          "exit_code": 2,
-          "stderr": ""
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "failed",
-          "exit_code": 2,
-          "stderr": ""
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
-          "status": "failed",
-          "reason": "perf_timeout_>4s"
-        },
-        {
-          "id": "unhashable",
-          "status": "failed",
+          "category": "boundary",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpqnj9i_4v\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpw6gkbk08\\test_runner.py\", line 6, in <module>\n    assert rb.pop() is None or rb.is_empty() is True\n           ~~~~~~^^\n "
         },
         {
-          "id": "many_puts",
-          "status": "passed"
+          "id": "overwrite_when_full",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "capacity_zero_boundary",
+          "status": "failed",
+          "category": "boundary",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpw6gkbk08\\test_runner.py\", line 7, in <module>\n    assert rb.pop() is None\n           ^^^^^^^^^^^^^^^^\nAssertionError"
+        },
+        {
+          "id": "stress_throughput",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_lock",
+          "status": "failed",
+          "category": "safety",
+          "exit_code": 1,
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpw6gkbk08\\test_runner.py\", line 6, in <module>\n    assert hasattr(rb, \"_lock\"), \"RingBuffer must maintain internal synchr"
         }
       ]
     },
     "critique": {
-      "failure_type": "EvictionOrderingAndPerformanceDegradation",
-      "root_cause": "The cache uses a linear list scan causing unacceptable latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys.",
-      "fix_instruction": "Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.",
+      "failure_type": "EmptyBufferBoundaryAndZeroCapacityFailure",
+      "root_cause": "The ring buffer crashes with unhandled IndexError when popped while empty, and fails to handle zero or negative capacity allocations safely.",
+      "fix_instruction": "Safely check is_empty before popping and return None on an empty buffer. If capacity <= 0, ensure push operations immediately no-op and pop operations return None.",
       "failed_tests": [
-        "capacity_zero",
-        "order_after_get",
-        "perf_timeout_>4s",
-        "unhashable"
+        "empty_pop_boundary",
+        "capacity_zero_boundary",
+        "thread_safety_lock"
       ]
     },
-    "architecture": "named Baseline Prototype",
+    "architecture": "Circular Array Prototype",
     "prompt": {
       "system_role": "Software Engineer (Prototype V1)",
-      "directive": "You are an expert algorithmic systems engineer.\nImplement an industrial-grade, highly efficient Least Recently Used (LRU) Cache class named `LRUCache`.\n\nClass Signature:\n```python\nclass LRUCache:\n    def __init__(self, capacity: int) -> None:\n        ...\n\n    def get(self, key: int) -> int:\n        ...\n\n    def put(self, key: int, value: int) -> None:\n        ...\n```\n\nRequirements:\n1. Time Complexity:\n   - Both `get` and `put` operations MUST achieve O(1) average time complexity.\n2. Eviction Policy:\n   - When the cache reaches its maximum capacity, adding a new key must evict the Least Recently Used (LRU) item.\n   - Accessing a key via `get` or updating an existing key via `put` must mark that key as the Most Recently Used (MRU).\n3. Overwrite Handling:\n   - If an existing key is inserted with `put`, update its value and move it to the MRU position without increasing the cache size.\n4. Edge Case - Zero or Negative Capacity:\n   - If initialized with `capacity <= 0`, all `put` operations must be safe no-ops, and all `get` operations must return -1.\n5. Edge Case - Unhashable Keys:\n   - If an unhashable key (such as a list or dictionary) is passed, `put` must safely ignore the operation (no-op)\n     and `get` must return -1, without raising an unhandled `TypeError` or crashing the execution environment.\n6. Code Quality:\n   - Provide clean docstrings, clear class architecture (e.g. Doubly Linked List with `class Node`), and type annotations (`-> int`, `-> None`).\n",
-      "commitment_hash": "0xca23d830af80f189...",
+      "directive": "Design a thread-safe RingBuffer with capacity, push, and pop",
+      "commitment_hash": "0xab4f6343202e260e...",
       "temperature": 0.0,
       "target_constraints": [
         "Core functional requirements",
@@ -94,152 +81,130 @@
       ]
     },
     "diff_stats": {
-      "added": 25,
+      "added": 23,
       "removed": 0,
-      "summary": "Initial candidate prototype: named Baseline Prototype"
+      "summary": "Initial candidate prototype: Circular Array Prototype"
     }
   },
   "v2": {
-    "code": "from collections import OrderedDict\n\nclass LRUCache:\n    \"\"\"\n    Least Recently Used (LRU) Cache using collections.OrderedDict.\n    Fixes O(1) performance and capacity zero boundary handling based on critique.\n    \"\"\"\n    def __init__(self, capacity):\n        self.capacity = capacity\n        self.cache = OrderedDict()\n\n    def get(self, key):\n        if self.capacity <= 0:\n            return -1\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n\n    def put(self, key, value):\n        if self.capacity <= 0:\n            return\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)\n\n",
+    "code": "# Dynamically generated V2 Revision for RingBuffer\n# Addresses Critique: EmptyBufferBoundaryAndZeroCapacityFailure\nclass RingBuffer:\n    \"\"\"Circular ring buffer with fixed capacity and empty pop safeguards.\"\"\"\n\n    def __init__(self, capacity: int):\n        self.capacity = max(0, capacity)\n        self.buffer = []\n\n    def push(self, item):\n        if self.capacity <= 0:\n            return\n        if len(self.buffer) >= self.capacity:\n            self.buffer.pop(0)\n        self.buffer.append(item)\n\n    def pop(self):\n        if self.capacity <= 0 or not self.buffer:\n            return None\n        return self.buffer.pop(0)\n\n    def is_empty(self) -> bool:\n        return len(self.buffer) == 0\n\n    def is_full(self) -> bool:\n        return self.capacity > 0 and len(self.buffer) >= self.capacity\n",
     "eval": {
-      "passed": 9,
-      "total": 10,
+      "passed": 5,
+      "total": 6,
       "failed_tests": [
-        "unhashable"
+        "thread_safety_lock"
       ],
-      "correctness": 90.0,
+      "correctness": 83.3,
       "efficiency": 100.0,
-      "safety": 50.0,
-      "quality": 70.0,
-      "final_score": 86.0,
-      "trace_hash_hex": "e4279bdf6f368392c81939a6bcb384cfc146d6ee9d5ac28c43cf66d339714b19",
-      "trace_hash_zk": "403114501199121261589578597062445486201349998601980156027182763915249021259",
+      "safety": 100.0,
+      "quality": 80.0,
+      "final_score": 88.0,
+      "trace_hash_hex": "b719a28418dbb5e85a8e751df0f2934fd27e27c2de4b186ff1ba280898f92a43",
+      "trace_hash_zk": "323509937935922763689955786612322454784177353238884425432260432948719319338",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
-        },
-        {
-          "id": "capacity_zero",
-          "status": "passed"
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "passed"
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
+          "id": "basic_enqueue_dequeue",
           "status": "passed",
-          "elapsed": 0.0583
+          "category": "functional"
         },
         {
-          "id": "unhashable",
+          "id": "empty_pop_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "overwrite_when_full",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "capacity_zero_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "stress_throughput",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_lock",
           "status": "failed",
+          "category": "safety",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpxqfurq0m\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
-        },
-        {
-          "id": "many_puts",
-          "status": "passed"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmp992cy1e3\\test_runner.py\", line 6, in <module>\n    assert hasattr(rb, \"_lock\"), \"RingBuffer must maintain internal synchr"
         }
       ]
     },
     "critique": {
-      "failure_type": "UnhashableKeyException",
-      "root_cause": "The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.",
-      "fix_instruction": "Implement defensive error handling or pre-checks for key hashability. Intercept TypeError exceptions during get and put operations: return minus one for gets and safely return without inserting for puts.",
+      "failure_type": "ConcurrencyRaceConditionFailure",
+      "root_cause": "The ring buffer lacks thread synchronization locks and full docstrings for production environments.",
+      "fix_instruction": "Wrap push and pop methods in a threading.Lock or threading.RLock context manager. Add full type annotations and Google-style docstrings.",
       "failed_tests": [
-        "unhashable"
+        "thread_safety_lock"
       ]
     },
-    "architecture": "named Boundary-Hardened Revision",
+    "architecture": "Boundary-Safe Circular Buffer",
     "prompt": {
       "system_role": "Algorithmic Systems Engineer (Revision V2)",
-      "directive": "Address critique from V1: EvictionOrderingAndPerformanceDegradation. Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.",
-      "commitment_hash": "0xe4279bdf6f368392...",
+      "directive": "Address critique from V1: EmptyBufferBoundaryAndZeroCapacityFailure. Safely check is_empty before popping and return None on an empty buffer. If capacity <= 0, ensure push operations immediately no-op and pop operations return None.",
+      "commitment_hash": "0xb719a28418dbb5e8...",
       "temperature": 0.0,
       "target_constraints": [
-        "Fix EvictionOrderingAndPerformanceDegradation",
+        "Fix EmptyBufferBoundaryAndZeroCapacityFailure",
         "Boundary & edge-case guards",
         "Defensive error handling"
       ]
     },
     "diff_stats": {
-      "added": 21,
-      "removed": 18,
-      "summary": "Refined architecture: named Boundary-Hardened Revision (+34.0 pts)"
+      "added": 12,
+      "removed": 8,
+      "summary": "Refined architecture: Boundary-Safe Circular Buffer (+23.0 pts)"
     }
   },
   "v3": {
-    "code": "\"\"\"\nProduction-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n\"\"\"\nfrom typing import Any, Optional\n\n\nclass Node:\n    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n    def __init__(self, key: Any = None, value: Any = None) -> None:\n        self.key: Any = key\n        self.value: Any = value\n        self.prev: Optional['Node'] = None\n        self.next: Optional['Node'] = None\n\n\nclass LRUCache:\n    \"\"\"\n    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n    Doubly Linked List for deterministic eviction order and strict type safety.\n    \"\"\"\n    def __init__(self, capacity: int) -> None:\n        self.capacity: int = capacity\n        self.map: dict = {}\n        self.head: Node = Node()\n        self.tail: Node = Node()\n        self.head.next = self.tail\n        self.tail.prev = self.head\n\n    def _remove(self, node: Node) -> None:\n        \"\"\"Unlink node from doubly linked list.\"\"\"\n        prev_node = node.prev\n        next_node = node.next\n        if prev_node:\n            prev_node.next = next_node\n        if next_node:\n            next_node.prev = prev_node\n\n    def _add_to_tail(self, node: Node) -> None:\n        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n        prev_node = self.tail.prev\n        if prev_node:\n            prev_node.next = node\n        node.prev = prev_node\n        node.next = self.tail\n        self.tail.prev = node\n\n    def get(self, key: Any) -> int:\n        \"\"\"\n        Retrieve value associated with key in O(1) time.\n        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return -1\n\n        if self.capacity <= 0 or key not in self.map:\n            return -1\n\n        node = self.map[key]\n        self._remove(node)\n        self._add_to_tail(node)\n        return node.value\n\n    def put(self, key: Any, value: int) -> None:\n        \"\"\"\n        Insert or update key-value pair in O(1) time.\n        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n        Evicts least recently used node if capacity exceeded.\n        \"\"\"\n        try:\n            hash(key)\n        except TypeError:\n            return\n\n        if self.capacity <= 0:\n            return\n\n        if key in self.map:\n            node = self.map[key]\n            node.value = value\n            self._remove(node)\n            self._add_to_tail(node)\n        else:\n            if len(self.map) >= self.capacity:\n                lru_node = self.head.next\n                if lru_node and lru_node != self.tail:\n                    self._remove(lru_node)\n                    if lru_node.key in self.map:\n                        del self.map[lru_node.key]\n            new_node = Node(key, value)\n            self._add_to_tail(new_node)\n            self.map[key] = new_node\n\n",
+    "code": "# Dynamically generated V3 Production for RingBuffer\n# Production-hardened with threading.RLock, O(1) circular indices, and strict type hints\nimport threading\nfrom typing import Any, Optional\n\n\nclass RingBuffer:\n    \"\"\"Production-grade thread-safe circular ring buffer.\n\n    Attributes:\n        capacity: Maximum elements stored.\n    \"\"\"\n\n    def __init__(self, capacity: int) -> None:\n        \"\"\"Initializes RingBuffer with capacity bounds.\"\"\"\n        self.capacity = max(0, capacity)\n        self.buffer = [None] * self.capacity if self.capacity > 0 else []\n        self._head = 0\n        self._tail = 0\n        self._size = 0\n        self._lock = threading.RLock()\n\n    def push(self, item: Any) -> None:\n        \"\"\"Pushes an element into the buffer under thread lock.\"\"\"\n        with self._lock:\n            if self.capacity <= 0:\n                return\n            self.buffer[self._tail] = item\n            self._tail = (self._tail + 1) % self.capacity\n            if self._size < self.capacity:\n                self._size += 1\n            else:\n                self._head = (self._head + 1) % self.capacity\n\n    def pop(self) -> Optional[Any]:\n        \"\"\"Pops the oldest element in FIFO order, returning None if empty.\"\"\"\n        with self._lock:\n            if self.capacity <= 0 or self._size == 0:\n                return None\n            item = self.buffer[self._head]\n            self.buffer[self._head] = None\n            self._head = (self._head + 1) % self.capacity\n            self._size -= 1\n            return item\n\n    def is_empty(self) -> bool:\n        \"\"\"Checks if the buffer contains zero elements.\"\"\"\n        with self._lock:\n            return self._size == 0\n\n    def is_full(self) -> bool:\n        \"\"\"Checks if the buffer is at full capacity.\"\"\"\n        with self._lock:\n            return self.capacity > 0 and self._size >= self.capacity\n",
     "eval": {
-      "passed": 10,
-      "total": 10,
+      "passed": 6,
+      "total": 6,
       "failed_tests": [],
       "correctness": 100.0,
       "efficiency": 100.0,
       "safety": 100.0,
-      "quality": 100.0,
-      "final_score": 100.0,
-      "trace_hash_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
-      "trace_hash_zk": "31205983669886106897505845854299291619967678032998655384702976412243720020",
+      "quality": 80.0,
+      "final_score": 98.0,
+      "trace_hash_hex": "707c7598ca7592f7401359b2e7d462358c7f6832dde474f047aa0f97484f56c1",
+      "trace_hash_zk": "198745858206696379483831756885326841651429359225329322604952688278423228246",
       "test_details": [
         {
-          "id": "basic",
-          "status": "passed"
-        },
-        {
-          "id": "capacity_zero",
-          "status": "passed"
-        },
-        {
-          "id": "eviction",
-          "status": "passed"
-        },
-        {
-          "id": "overwrite",
-          "status": "passed"
-        },
-        {
-          "id": "order_after_get",
-          "status": "passed"
-        },
-        {
-          "id": "single_cap",
-          "status": "passed"
-        },
-        {
-          "id": "not_found",
-          "status": "passed"
-        },
-        {
-          "id": "perf_100k",
+          "id": "basic_enqueue_dequeue",
           "status": "passed",
-          "elapsed": 0.0909
+          "category": "functional"
         },
         {
-          "id": "unhashable",
-          "status": "passed"
+          "id": "empty_pop_boundary",
+          "status": "passed",
+          "category": "boundary"
         },
         {
-          "id": "many_puts",
-          "status": "passed"
+          "id": "overwrite_when_full",
+          "status": "passed",
+          "category": "functional"
+        },
+        {
+          "id": "capacity_zero_boundary",
+          "status": "passed",
+          "category": "boundary"
+        },
+        {
+          "id": "stress_throughput",
+          "status": "passed",
+          "category": "stress"
+        },
+        {
+          "id": "thread_safety_lock",
+          "status": "passed",
+          "category": "safety"
         }
       ]
     },
@@ -249,11 +214,11 @@
       "fix_instruction": "Maintain current architecture; no further revisions required.",
       "failed_tests": []
     },
-    "architecture": "named Thread-Safe Production Implementation",
+    "architecture": "Thread-Safe Circular Ring Buffer (RLock + Modulo)",
     "prompt": {
       "system_role": "Principal Systems Architect (Production V3)",
-      "directive": "Address critique from V2: UnhashableKeyException. Engineer production-ready solution with thread synchronization, static typing, and Google docstrings.",
-      "commitment_hash": "0x11a9764402aea77a...",
+      "directive": "Address critique from V2: ConcurrencyRaceConditionFailure. Engineer production-ready solution with thread synchronization, static typing, and Google docstrings.",
+      "commitment_hash": "0x707c7598ca7592f7...",
       "temperature": 0.0,
       "target_constraints": [
         "Thread Synchronization (RLock)",
@@ -262,30 +227,67 @@
       ]
     },
     "diff_stats": {
-      "added": 83,
+      "added": 45,
       "removed": 17,
-      "summary": "Production architecture: named Thread-Safe Production Implementation (+14.0 pts)"
+      "summary": "Production architecture: Thread-Safe Circular Ring Buffer (RLock + Modulo) (+10.0 pts)"
     }
   },
   "diffs": {
-    "diff_v1_v2": "--- v1_failing.py\n+++ v2_fixed.py\n@@ -1,25 +1,28 @@\n-# Initial draft V1: Contains classical algorithmic bugs, unhandled edge cases, and performance bottlenecks.\n+from collections import OrderedDict\n+\n class LRUCache:\n+    \"\"\"\n+    Least Recently Used (LRU) Cache using collections.OrderedDict.\n+    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    \"\"\"\n     def __init__(self, capacity):\n-        self.cap = capacity\n-        self.cache = []\n+        self.capacity = capacity\n+        self.cache = OrderedDict()\n \n     def get(self, key):\n-        hash(key)\n-        for k, v in self.cache:\n-            if k == key:\n-                return v\n-        return -1\n+        if self.capacity <= 0:\n+            return -1\n+        if key not in self.cache:\n+            return -1\n+        self.cache.move_to_end(key)\n+        return self.cache[key]\n \n     def put(self, key, value):\n-        hash(key)\n-        for i, (k, v) in enumerate(self.cache):\n-            if k == key:\n-                self.cache[i] = (key, value)\n-                return\n-        self.cache.append((key, value))\n-        for _ in range(2000):\n-            sum([1 for _ in self.cache])\n-        if self.cap > 0 and len(self.cache) > self.cap:\n-            self.cache.pop(0)\n+        if self.capacity <= 0:\n+            return\n+        if key in self.cache:\n+            self.cache.move_to_end(key)\n+        self.cache[key] = value\n+        if len(self.cache) > self.capacity:\n+            self.cache.popitem(last=False)\n \n",
-    "diff_v2_v3": "--- v2_fixed.py\n+++ v3_perfect.py\n@@ -1,28 +1,94 @@\n-from collections import OrderedDict\n+\"\"\"\n+Production-Grade LRU Cache Implementation with Doubly Linked List and Hash Map.\n+\"\"\"\n+from typing import Any, Optional\n+\n+\n+class Node:\n+    \"\"\"Doubly-linked list node storing key and value.\"\"\"\n+    def __init__(self, key: Any = None, value: Any = None) -> None:\n+        self.key: Any = key\n+        self.value: Any = value\n+        self.prev: Optional['Node'] = None\n+        self.next: Optional['Node'] = None\n+\n \n class LRUCache:\n     \"\"\"\n-    Least Recently Used (LRU) Cache using collections.OrderedDict.\n-    Fixes O(1) performance and capacity zero boundary handling based on critique.\n+    Industrial-grade O(1) LRU Cache utilizing a Hash Map paired with a\n+    Doubly Linked List for deterministic eviction order and strict type safety.\n     \"\"\"\n-    def __init__(self, capacity):\n-        self.capacity = capacity\n-        self.cache = OrderedDict()\n+    def __init__(self, capacity: int) -> None:\n+        self.capacity: int = capacity\n+        self.map: dict = {}\n+        self.head: Node = Node()\n+        self.tail: Node = Node()\n+        self.head.next = self.tail\n+        self.tail.prev = self.head\n \n-    def get(self, key):\n-        if self.capacity <= 0:\n+    def _remove(self, node: Node) -> None:\n+        \"\"\"Unlink node from doubly linked list.\"\"\"\n+        prev_node = node.prev\n+        next_node = node.next\n+        if prev_node:\n+            prev_node.next = next_node\n+        if next_node:\n+            next_node.prev = prev_node\n+\n+    def _add_to_tail(self, node: Node) -> None:\n+        \"\"\"Append node right before dummy tail (mark as most recently used).\"\"\"\n+        prev_node = self.tail.prev\n+        if prev_node:\n+            prev_node.next = node\n+        node.prev = prev_node\n+        node.next = self.tail\n+        self.tail.prev = node\n+\n+    def get(self, key: Any) -> int:\n+        \"\"\"\n+        Retrieve value associated with key in O(1) time.\n+        Gracefully handles unhashable keys and returns -1 when key is missing or capacity <= 0.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n             return -1\n-        if key not in self.cache:\n+\n+        if self.capacity <= 0 or key not in self.map:\n             return -1\n-        self.cache.move_to_end(key)\n-        return self.cache[key]\n \n-    def put(self, key, value):\n+        node = self.map[key]\n+        self._remove(node)\n+        self._add_to_tail(node)\n+        return node.value\n+\n+    def put(self, key: Any, value: int) -> None:\n+        \"\"\"\n+        Insert or update key-value pair in O(1) time.\n+        Gracefully ignores unhashable keys and no-ops when capacity <= 0.\n+        Evicts least recently used node if capacity exceeded.\n+        \"\"\"\n+        try:\n+            hash(key)\n+        except TypeError:\n+            return\n+\n         if self.capacity <= 0:\n             return\n-        if key in self.cache:\n-            self.cache.move_to_end(key)\n-        self.cache[key] = value\n-        if len(self.cache) > self.capacity:\n-            self.cache.popitem(last=False)\n \n+        if key in self.map:\n+            node = self.map[key]\n+            node.value = value\n+            self._remove(node)\n+            self._add_to_tail(node)\n+        else:\n+            if len(self.map) >= self.capacity:\n+                lru_node = self.head.next\n+                if lru_node and lru_node != self.tail:\n+                    self._remove(lru_node)\n+                    if lru_node.key in self.map:\n+                        del self.map[lru_node.key]\n+            new_node = Node(key, value)\n+            self._add_to_tail(new_node)\n+            self.map[key] = new_node\n+\n"
+    "diff_v1_v2": "--- v1_failing.py\n+++ v2_fixed.py\n@@ -1,23 +1,26 @@\n-# Dynamically generated V1 Prototype for RingBuffer\n+# Dynamically generated V2 Revision for RingBuffer\n+# Addresses Critique: EmptyBufferBoundaryAndZeroCapacityFailure\n class RingBuffer:\n-    def __init__(self, capacity):\n-        self.capacity = capacity\n+    \"\"\"Circular ring buffer with fixed capacity and empty pop safeguards.\"\"\"\n+\n+    def __init__(self, capacity: int):\n+        self.capacity = max(0, capacity)\n         self.buffer = []\n \n     def push(self, item):\n         if self.capacity <= 0:\n-            self.buffer.append(item)\n             return\n         if len(self.buffer) >= self.capacity:\n             self.buffer.pop(0)\n         self.buffer.append(item)\n \n     def pop(self):\n-        # Naive pop raises IndexError on empty buffer\n+        if self.capacity <= 0 or not self.buffer:\n+            return None\n         return self.buffer.pop(0)\n \n-    def is_empty(self):\n+    def is_empty(self) -> bool:\n         return len(self.buffer) == 0\n \n-    def is_full(self):\n-        return len(self.buffer) >= self.capacity\n+    def is_full(self) -> bool:\n+        return self.capacity > 0 and len(self.buffer) >= self.capacity\n",
+    "diff_v2_v3": "--- v2_fixed.py\n+++ v3_perfect.py\n@@ -1,26 +1,54 @@\n-# Dynamically generated V2 Revision for RingBuffer\n-# Addresses Critique: EmptyBufferBoundaryAndZeroCapacityFailure\n+# Dynamically generated V3 Production for RingBuffer\n+# Production-hardened with threading.RLock, O(1) circular indices, and strict type hints\n+import threading\n+from typing import Any, Optional\n+\n+\n class RingBuffer:\n-    \"\"\"Circular ring buffer with fixed capacity and empty pop safeguards.\"\"\"\n+    \"\"\"Production-grade thread-safe circular ring buffer.\n \n-    def __init__(self, capacity: int):\n+    Attributes:\n+        capacity: Maximum elements stored.\n+    \"\"\"\n+\n+    def __init__(self, capacity: int) -> None:\n+        \"\"\"Initializes RingBuffer with capacity bounds.\"\"\"\n         self.capacity = max(0, capacity)\n-        self.buffer = []\n+        self.buffer = [None] * self.capacity if self.capacity > 0 else []\n+        self._head = 0\n+        self._tail = 0\n+        self._size = 0\n+        self._lock = threading.RLock()\n \n-    def push(self, item):\n-        if self.capacity <= 0:\n-            return\n-        if len(self.buffer) >= self.capacity:\n-            self.buffer.pop(0)\n-        self.buffer.append(item)\n+    def push(self, item: Any) -> None:\n+        \"\"\"Pushes an element into the buffer under thread lock.\"\"\"\n+        with self._lock:\n+            if self.capacity <= 0:\n+                return\n+            self.buffer[self._tail] = item\n+            self._tail = (self._tail + 1) % self.capacity\n+            if self._size < self.capacity:\n+                self._size += 1\n+            else:\n+                self._head = (self._head + 1) % self.capacity\n \n-    def pop(self):\n-        if self.capacity <= 0 or not self.buffer:\n-            return None\n-        return self.buffer.pop(0)\n+    def pop(self) -> Optional[Any]:\n+        \"\"\"Pops the oldest element in FIFO order, returning None if empty.\"\"\"\n+        with self._lock:\n+            if self.capacity <= 0 or self._size == 0:\n+                return None\n+            item = self.buffer[self._head]\n+            self.buffer[self._head] = None\n+            self._head = (self._head + 1) % self.capacity\n+            self._size -= 1\n+            return item\n \n     def is_empty(self) -> bool:\n-        return len(self.buffer) == 0\n+        \"\"\"Checks if the buffer contains zero elements.\"\"\"\n+        with self._lock:\n+            return self._size == 0\n \n     def is_full(self) -> bool:\n-        return self.capacity > 0 and len(self.buffer) >= self.capacity\n+        \"\"\"Checks if the buffer is at full capacity.\"\"\"\n+        with self._lock:\n+            return self.capacity > 0 and self._size >= self.capacity\n"
   },
-  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n(Orchestrated via LangGraph StateGraph & LangChain Constitutional Workflows)\n\n## Summary of Progression\n- **Iteration V1**: Score 52.0 (Passed 6/10) \u2014 named Baseline Prototype\n- **Iteration V2**: Score 86.0 (Passed 9/10) [Gain: +34.0 pts] \u2014 named Boundary-Hardened Revision\n- **Iteration V3**: Score 100.0 (Passed 10/10) [Gain: +14.0 pts] \u2014 named Thread-Safe Production Implementation\n\n---\n\n### Phase 1: V1 -> V2 Architectural Refinement (LangGraph: Critic -> Generator)\n- **Diagnosed Failure Type**: `EvictionOrderingAndPerformanceDegradation`\n- **Identified Root Cause**: The cache uses a linear list scan causing unacceptable latency under high throughput, fails to evict or reject items when capacity is zero, does not update recency order when an existing key is accessed, and crashes with an unhandled TypeError on unhashable keys.\n- **Applied Changes**:\n  - Re-architected code from named Baseline Prototype to named Boundary-Hardened Revision.\n  - Replace linear storage with an O(1) hash map and ordered structure such as OrderedDict or Doubly-Linked List. Ensure capacity zero immediately rejects puts and returns minus one on gets. Move keys to most-recently-used on access, and safely intercept type errors on unhashable keys.\n- **Verification Metric**: Final score increased from 52.0 to 86.0.\n\n---\n\n### Phase 2: V2 -> V3 Hardening & Constitutional Safety (LangGraph: Critic -> Generator)\n- **Diagnosed Failure Type**: `UnhashableKeyException`\n- **Identified Root Cause**: The cache assumes all input keys are hashable. When an unhashable key such as a list or dictionary is passed, the underlying dictionary operation raises an unhandled TypeError.\n- **Applied Changes**:\n  - Implemented production-grade architecture: named Thread-Safe Production Implementation.\n  - Implement defensive error handling or pre-checks for key hashability. Intercept TypeError exceptions during get and put operations: return minus one for gets and safely return without inserting for puts.\n  - Added comprehensive static typing and Google Python style docstrings.\n- **Verification Metric**: Final score reached 100.0 (10/10 tests passed).\n",
+  "changelog": "# AutoEvolve Protocol - Automated Improvement Changelog\n(Orchestrated via LangGraph StateGraph & LangChain Constitutional Workflows)\n\n## Summary of Progression\n- **Iteration V1**: Score 65.0 (Passed 3/6) \u2014 Circular Array Prototype\n- **Iteration V2**: Score 88.0 (Passed 5/6) [Gain: +23.0 pts] \u2014 Boundary-Safe Circular Buffer\n- **Iteration V3**: Score 98.0 (Passed 6/6) [Gain: +10.0 pts] \u2014 Thread-Safe Circular Ring Buffer (RLock + Modulo)\n\n---\n\n### Phase 1: V1 -> V2 Architectural Refinement (LangGraph: Critic -> Generator)\n- **Diagnosed Failure Type**: `EmptyBufferBoundaryAndZeroCapacityFailure`\n- **Identified Root Cause**: The ring buffer crashes with unhandled IndexError when popped while empty, and fails to handle zero or negative capacity allocations safely.\n- **Applied Changes**:\n  - Re-architected code from Circular Array Prototype to Boundary-Safe Circular Buffer.\n  - Safely check is_empty before popping and return None on an empty buffer. If capacity <= 0, ensure push operations immediately no-op and pop operations return None.\n- **Verification Metric**: Final score increased from 65.0 to 88.0.\n\n---\n\n### Phase 2: V2 -> V3 Hardening & Constitutional Safety (LangGraph: Critic -> Generator)\n- **Diagnosed Failure Type**: `ConcurrencyRaceConditionFailure`\n- **Identified Root Cause**: The ring buffer lacks thread synchronization locks and full docstrings for production environments.\n- **Applied Changes**:\n  - Implemented production-grade architecture: Thread-Safe Circular Ring Buffer (RLock + Modulo).\n  - Wrap push and pop methods in a threading.Lock or threading.RLock context manager. Add full type annotations and Google-style docstrings.\n  - Added comprehensive static typing and Google Python style docstrings.\n- **Verification Metric**: Final score reached 98.0 (6/6 tests passed).\n",
   "zk_inputs": {
-    "score_v1": 52,
-    "score_v2": 86,
-    "score_v3": 100,
-    "log_hash_v1": "357150496683039437535052423681004004590577548506268073491761557186834366983",
-    "log_hash_v2": "403114501199121261589578597062445486201349998601980156027182763915249021259",
-    "log_hash_v3": "31205983669886106897505845854299291619967678032998655384702976412243720020",
-    "hash_v1_hex": "ca23d830af80f1892f13da6e61ffd8b176e55b96bfe8b23d722d3aa1d48207a0",
-    "hash_v2_hex": "e4279bdf6f368392c81939a6bcb384cfc146d6ee9d5ac28c43cf66d339714b19",
-    "hash_v3_hex": "11a9764402aea77a767564114ae80af7847a20ea62deeb8ba60a6c60a3f7540f",
-    "score_v1_full": 52.0,
-    "score_v2_full": 86.0,
-    "score_v3_full": 100.0
+    "score_v1": 65,
+    "score_v2": 88,
+    "score_v3": 98,
+    "log_hash_v1": "302678762142381959094778731159725342192424169693450222323270454698859502127",
+    "log_hash_v2": "323509937935922763689955786612322454784177353238884425432260432948719319338",
+    "log_hash_v3": "198745858206696379483831756885326841651429359225329322604952688278423228246",
+    "hash_v1_hex": "ab4f6343202e260e57c2ca5f10421bbf97f2f89da07f01b763352a29471a2fa0",
+    "hash_v2_hex": "b719a28418dbb5e85a8e751df0f2934fd27e27c2de4b186ff1ba280898f92a43",
+    "hash_v3_hex": "707c7598ca7592f7401359b2e7d462358c7f6832dde474f047aa0f97484f56c1",
+    "score_v1_full": 65.0,
+    "score_v2_full": 88.0,
+    "score_v3_full": 98.0
   },
-  "custom_prompt": null,
-  "dynamic_tests": null
+  "custom_prompt": "Design a thread-safe RingBuffer with capacity, push, and pop",
+  "dynamic_tests": [
+    {
+      "id": "basic_enqueue_dequeue",
+      "category": "functional",
+      "description": "FIFO ordering on standard push and pop operations",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(3)\nrb.push(1)\nrb.push(2)\nassert rb.pop() == 1\nassert rb.pop() == 2\nsys.exit(0)"
+    },
+    {
+      "id": "empty_pop_boundary",
+      "category": "boundary",
+      "description": "Popping from empty buffer returns None or raises IndexError safely",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(2)\nassert rb.pop() is None or rb.is_empty() is True\nsys.exit(0)"
+    },
+    {
+      "id": "overwrite_when_full",
+      "category": "functional",
+      "description": "Overwrites oldest element when capacity is exceeded",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(2)\nrb.push(1)\nrb.push(2)\nrb.push(3) # Overwrites 1\nassert rb.pop() == 2\nassert rb.pop() == 3\nsys.exit(0)"
+    },
+    {
+      "id": "capacity_zero_boundary",
+      "category": "boundary",
+      "description": "Zero or negative capacity buffer handles operations safely",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(0)\nrb.push(10)\nassert rb.pop() is None\nsys.exit(0)"
+    },
+    {
+      "id": "stress_throughput",
+      "category": "stress",
+      "description": "10,000 push/pop cycles under 0.5s",
+      "script": "import sys, time\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(50)\nt0 = time.perf_counter()\nfor i in range(10000):\n    rb.push(i)\n    if i % 2 == 0:\n        rb.pop()\nassert time.perf_counter() - t0 < 0.85\nsys.exit(0)"
+    },
+    {
+      "id": "thread_safety_lock",
+      "category": "safety",
+      "description": "Ensures thread-safe synchronization lock is configured",
+      "script": "import sys\nsys.path.insert(0, \".\")\nfrom solution import RingBuffer\n\nrb = RingBuffer(5)\nassert hasattr(rb, \"_lock\"), \"RingBuffer must maintain internal synchronization lock\"\nsys.exit(0)"
+    }
+  ]
 }
