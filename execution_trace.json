@@ -60,7 +60,7 @@
           "id": "unhashable",
           "status": "failed",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmpn6vacbp8\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmph5rolcjz\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
         },
         {
           "id": "many_puts",
@@ -127,13 +127,13 @@
         {
           "id": "perf_100k",
           "status": "passed",
-          "elapsed": 0.0648
+          "elapsed": 0.0427
         },
         {
           "id": "unhashable",
           "status": "failed",
           "exit_code": 1,
-          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\rakes\\AppData\\Local\\Temp\\tmps1vs81p8\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
+          "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\lokes\\AppData\\Local\\Temp\\tmpw6f3cd5r\\test_runner.py\", line 13, in <module>\n    cache.put(op[1], op[2])\n    ~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\"
         },
         {
           "id": "many_puts",
@@ -195,7 +195,7 @@
         {
           "id": "perf_100k",
           "status": "passed",
-          "elapsed": 0.079
+          "elapsed": 0.0679
         },
         {
           "id": "unhashable",

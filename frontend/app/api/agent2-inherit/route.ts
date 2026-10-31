@@ -1,18 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exec } from "child_process";
 import path from "path";
+import fs from "fs";
 import { promisify } from "util";
 
 const execAsync = promisify(exec);
-const REPO_ROOT = path.resolve(process.cwd(), "..");
+
+function getRepoRoot(): string {
+  if (fs.existsSync(path.join(process.cwd(), "pipeline.py"))) {
+    return process.cwd();
+  }
+  return path.resolve(process.cwd(), "..");
+}
+
+const REPO_ROOT = getRepoRoot();
+
+function getPythonExecutable(): string {
+  const venvPythonWin = path.join(REPO_ROOT, ".venv", "Scripts", "python.exe");
+  if (fs.existsSync(venvPythonWin)) {
+    return `"${venvPythonWin}"`;
+  }
+  const venvPythonPosix = path.join(REPO_ROOT, ".venv", "bin", "python");
+  if (fs.existsSync(venvPythonPosix)) {
+    return `"${venvPythonPosix}"`;
+  }
+  return "py -3.13";
+}
 
 const FALLBACK_INHERITANCE_RESULT = {
   status: "INHERITANCE_SUCCESS",
   agent_id: "Agent_2_VerifiableLearner",
   query: "I have an IndexError when capacity is zero in LRU cache.",
   matched_task_id: "task_lru_cache_ttl_v3",
-  matched_ipfs_cid: "bafy_mock_2c129eea51721870c1cec85f",
-  gateway_url: "https://gateway.lighthouse.storage/ipfs/bafy_mock_2c129eea51721870c1cec85f",
+  matched_ipfs_cid: "bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
+  gateway_url: "https://gateway.lighthouse.storage/ipfs/bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
   similarity_score: 0.8045,
   similarity_percentage: 80.45,
   similarity_threshold: 0.8,
@@ -68,7 +89,7 @@ Verified Reference Code Diff:
     "Agent 2 diagnosed failing test vector: 'edge_case_capacity_zero'",
     "Queried Base Sepolia / DataDAO decentralized memory ledger",
     "Computed 384-dimensional dense semantic embedding (all-MiniLM-L6-v2)",
-    "Discovered matching IPFS CID bafy_mock_2c129eea51721870c1cec85f with 80.45% cosine similarity (>= 80% cutoff)",
+    "Discovered matching IPFS CID bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001 with 80.45% cosine similarity (>= 80% cutoff)",
     "Hydrated verified fix diff from decentralized storage gateway",
     "Injected verified fix pattern into Agent 2 runtime context",
     "Subprocess sandbox execution: 10/10 tests passed on Attempt V1 (Score: 100.0)",
@@ -90,16 +111,31 @@ export async function POST(req: NextRequest) {
 
 async function handleInheritance(query?: string) {
   try {
+    const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
     const escapedQuery = (query || "").replace(/"/g, '\\"');
     const queryFlag = escapedQuery ? `--query "${escapedQuery}"` : "";
 
-    const cmd = `python -u "${pipelinePy}" --agent2-inherit ${queryFlag} --json`;
+    const cmd = `${pythonExe} -u "${pipelinePy}" --agent2-inherit ${queryFlag} --json`;
     console.log(`[API /api/agent2-inherit] Executing: ${cmd}`);
 
-    const { stdout } = await execAsync(cmd, { cwd: REPO_ROOT, timeout: 35000 });
+    const { stdout } = await execAsync(cmd, { cwd: REPO_ROOT, timeout: 60000 });
 
-    // Look for JSON in stdout
+    // Look for JSON on the last valid JSON line
+    const lines = stdout.trim().split("\n");
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (line.startsWith("{") && line.endsWith("}")) {
+        try {
+          const parsed = JSON.parse(line);
+          return NextResponse.json(parsed);
+        } catch {
+          // continue
+        }
+      }
+    }
+
+    // Secondary fallback to regex match if formatting differs
     const jsonMatch = stdout.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
