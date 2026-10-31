@@ -26,6 +26,9 @@ export interface DiffViewerProps {
   v1Score?: number;
   v2Score?: number;
   v3Score?: number;
+  v1Architecture?: string;
+  v2Architecture?: string;
+  v3Architecture?: string;
 }
 
 export default function DiffViewer({
@@ -37,6 +40,9 @@ export default function DiffViewer({
   v1Score = 52,
   v2Score = 86,
   v3Score = 100,
+  v1Architecture,
+  v2Architecture,
+  v3Architecture,
 }: DiffViewerProps) {
   const [activeDiffKey, setActiveDiffKey] = useState<"v1_v2" | "v2_v3">("v1_v2");
   const [copied, setCopied] = useState(false);
@@ -262,13 +268,13 @@ export default function DiffViewer({
           <div className="flex items-center space-x-2">
             <FileCode className="w-4 h-4 text-rose-400" />
             <span>
-              {leftVer} Candidate ({activeDiffKey === "v1_v2" ? "Linear Scan" : "OrderedDict"})
+              {leftVer} Candidate ({activeDiffKey === "v1_v2" ? (v1Architecture || "Initial Prototype") : (v2Architecture || "Refined Architecture")})
             </span>
           </div>
           <div className="flex items-center space-x-2 border-l border-slate-800 pl-4">
             <FileCode className="w-4 h-4 text-emerald-400" />
             <span>
-              {rightVer} Candidate ({activeDiffKey === "v1_v2" ? "OrderedDict" : "Doubly Linked List + Node"})
+              {rightVer} Candidate ({activeDiffKey === "v1_v2" ? (v2Architecture || "Refined Architecture") : (v3Architecture || "Production Target")})
             </span>
           </div>
         </div>

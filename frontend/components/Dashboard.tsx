@@ -618,6 +618,9 @@ export default function Dashboard() {
                 v1Score={initialScore}
                 v2Score={v2?.score ?? 86}
                 v3Score={finalScore}
+                v1Architecture={v1?.architecture}
+                v2Architecture={v2?.architecture}
+                v3Architecture={v3?.architecture}
               />
             )}
 
