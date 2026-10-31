@@ -29,6 +29,7 @@ try:
     from agent.critic import critique_code
     from agent.loop import run_loop
     from agent.test_case_creator import TestCaseCreator
+    from agent.dynamic_synthesizer import DynamicProgramSynthesizer
 except ImportError:
     from module1.agent.task import TASK_PROMPT, HIDDEN_TESTS
     from module1.agent.evaluator import evaluate_code
@@ -36,6 +37,7 @@ except ImportError:
     from module1.agent.critic import critique_code
     from module1.agent.loop import run_loop
     from module1.agent.test_case_creator import TestCaseCreator
+    from module1.agent.dynamic_synthesizer import DynamicProgramSynthesizer
 
 __all__ = [
     "TASK_PROMPT",
@@ -46,5 +48,6 @@ __all__ = [
     "critique_code",
     "run_loop",
     "TestCaseCreator",
+    "DynamicProgramSynthesizer",
 ]
 

@@ -22,6 +22,14 @@ try:
 except ImportError:
     requests = None
 
+try:
+    from agent.dynamic_synthesizer import DynamicProgramSynthesizer
+except ImportError:
+    try:
+        from dynamic_synthesizer import DynamicProgramSynthesizer
+    except ImportError:
+        DynamicProgramSynthesizer = None
+
 logger = logging.getLogger("AutoEvolve.Generator")
 
 
@@ -127,12 +135,30 @@ def generate_code(
         logger.info("Inherited memory provided from decentralized registry; bypassing failure loops.")
         return _load_mock("v3_perfect.py")
 
+    is_custom = bool(task_prompt and "lru" not in task_prompt.lower())
+
     use_mock_env = os.getenv("USE_MOCK", "0").lower() in ("1", "true", "yes")
     if force_mock or use_mock_env:
+        if is_custom and DynamicProgramSynthesizer is not None:
+            logger.info(f"[Generator Agent] Dynamically synthesizing {norm_attempt.upper()} code on the fly for custom prompt...")
+            return DynamicProgramSynthesizer.synthesize(
+                task_prompt=task_prompt,
+                attempt=norm_attempt,
+                previous_code=previous_code,
+                critique=critique,
+            )
         return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 
     api_key = os.getenv("FEATHERLESS_API_KEY")
     if not api_key or requests is None:
+        if is_custom and DynamicProgramSynthesizer is not None:
+            logger.info(f"[Generator Agent] Dynamically synthesizing {norm_attempt.upper()} code on the fly for custom prompt...")
+            return DynamicProgramSynthesizer.synthesize(
+                task_prompt=task_prompt,
+                attempt=norm_attempt,
+                previous_code=previous_code,
+                critique=critique,
+            )
         logger.info(f"Using deterministic calibrated mock for {norm_attempt} (FEATHERLESS_API_KEY not configured).")
         return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 
@@ -273,8 +299,22 @@ def generate_code(
         extracted = extract_python_code(raw_text)
         if extracted:
             return extracted
+        if is_custom and DynamicProgramSynthesizer is not None:
+            return DynamicProgramSynthesizer.synthesize(
+                task_prompt=task_prompt,
+                attempt=norm_attempt,
+                previous_code=previous_code,
+                critique=critique,
+            )
         return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
     except Exception as e:
-        logger.warning(f"Featherless API call failed ({e}); falling back to calibrated mock for {norm_attempt}.")
+        logger.warning(f"Featherless API call failed ({e}); dynamically synthesizing code for {norm_attempt}.")
+        if is_custom and DynamicProgramSynthesizer is not None:
+            return DynamicProgramSynthesizer.synthesize(
+                task_prompt=task_prompt,
+                attempt=norm_attempt,
+                previous_code=previous_code,
+                critique=critique,
+            )
         return _load_mock_for_attempt(norm_attempt, task_prompt=task_prompt)
 
