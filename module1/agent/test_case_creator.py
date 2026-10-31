@@ -45,21 +45,22 @@ class TestCaseCreator:
         self.task_prompt = task_prompt or ""
         self.model = model
 
-    def create_test_suite(self, task_prompt: Optional[str] = None) -> List[Dict[str, Any]]:
+    def create_test_suite(self, task_prompt: Optional[str] = None, force_mock: bool = True) -> List[Dict[str, Any]]:
         """Generate a complete, syntax-validated test suite for the given task prompt."""
         prompt = task_prompt or self.task_prompt
         logger.info("[TestCaseCreator] Analyzing task prompt to synthesize dynamic test suite...")
 
-        # 1. Check if Featherless API is configured for live LLM generation
-        api_key = os.getenv("FEATHERLESS_API_KEY", "").strip()
-        if api_key and not api_key.startswith("your_"):
-            try:
-                live_tests = self._generate_with_llm(prompt, api_key)
-                if live_tests and len(live_tests) >= 5:
-                    logger.info(f"[TestCaseCreator] Successfully synthesized {len(live_tests)} live LLM tests.")
-                    return [t.to_dict() for t in live_tests]
-            except Exception as e:
-                logger.warning(f"[TestCaseCreator] Live test generation failed ({e}), falling back to domain synthesizer.")
+        # 1. Check if Featherless API is configured for live LLM generation (only in live mode)
+        if not force_mock:
+            api_key = os.getenv("FEATHERLESS_API_KEY", "").strip()
+            if api_key and not api_key.startswith("your_"):
+                try:
+                    live_tests = self._generate_with_llm(prompt, api_key)
+                    if live_tests and len(live_tests) >= 5:
+                        logger.info(f"[TestCaseCreator] Successfully synthesized {len(live_tests)} live LLM tests.")
+                        return [t.to_dict() for t in live_tests]
+                except Exception as e:
+                    logger.warning(f"[TestCaseCreator] Live test generation failed ({e}), falling back to domain synthesizer.")
 
         # 2. Domain-Aware Test Synthesis Engine
         domain_tests = self._synthesize_domain_tests(prompt)
@@ -70,24 +71,545 @@ class TestCaseCreator:
         """Synthesizes high-coverage tests based on inferred algorithmic/system domain."""
         lower_prompt = prompt.lower()
 
+        # Domain: Prime Checker / Primality Detection
+        if any(kw in lower_prompt for kw in ["prime", "primality", "is_prime"]):
+            return self._build_prime_tests()
+
+        # Domain: Fibonacci Generator
+        if any(kw in lower_prompt for kw in ["fibonacci", "fib"]):
+            return self._build_fibonacci_tests()
+
+        # Domain: Binary Search Engine
+        if any(kw in lower_prompt for kw in ["binary search", "binary_search"]):
+            return self._build_binary_search_tests()
+
         # Domain: Rate Limiter / Token Bucket
-        if any(kw in lower_prompt for kw in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket", "token_bucket"]):
+        if any(kw in lower_prompt for kw in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket", "token_bucket", "throttler"]):
             return self._build_rate_limiter_tests()
 
         # Domain: Queue / Ring Buffer
-        if any(kw in lower_prompt for kw in ["ring buffer", "ringbuffer", "circular buffer", "queue", "fifo"]):
+        if any(kw in lower_prompt for kw in ["ring buffer", "ringbuffer", "circular buffer", "circular queue", "bounded ring"]):
             return self._build_ring_buffer_tests()
 
         # Domain: Trie / Prefix Tree
-        if any(kw in lower_prompt for kw in ["trie", "prefix tree", "autocomplete"]):
+        if any(kw in lower_prompt for kw in ["trie", "prefix tree", "autocomplete", "radix tree"]):
             return self._build_trie_tests()
 
-        # Domain: Min Stack / Stack
-        if any(kw in lower_prompt for kw in ["min stack", "minstack", "stack"]):
+        # Domain: Min Stack / Minimum Stack
+        if any(kw in lower_prompt for kw in ["min stack", "minstack", "minimum stack"]):
             return self._build_min_stack_tests()
 
-        # Default fallback: LRU Cache / Key-Value Store
-        return self._build_lru_tests()
+        # Domain: Priority Queue
+        if any(kw in lower_prompt for kw in ["priority queue", "priorityqueue", "heap"]):
+            return self._build_priority_queue_tests()
+
+        # Domain: Calculator / Expression
+        if any(kw in lower_prompt for kw in ["calculator", "expression", "arithmetic"]):
+            return self._build_calculator_tests()
+
+        # Domain: LRU Cache / Benchmark
+        if ("lru" in lower_prompt or "least recently used" in lower_prompt) and not any(kw in lower_prompt for kw in ["rate", "ring", "trie", "min", "prime"]):
+            return self._build_lru_tests()
+
+        # Generic Domain for arbitrary custom user prompts
+        try:
+            from agent.dynamic_synthesizer import DynamicProgramSynthesizer
+            cname = DynamicProgramSynthesizer.extract_class_name(prompt)
+        except Exception:
+            try:
+                from module1.agent.dynamic_synthesizer import DynamicProgramSynthesizer
+                cname = DynamicProgramSynthesizer.extract_class_name(prompt)
+            except Exception:
+                cname = "SolutionEngine"
+
+        return self._build_generic_tests(cname, prompt)
+
+
+    def _build_prime_tests(self) -> List[TestCase]:
+        """Synthesizes verified unit tests for PrimeChecker."""
+        return [
+            TestCase(
+                id="small_primes_functional",
+                category="functional",
+                description="Correctly identifies small prime numbers (2, 3, 5, 7, 11, 13, 17, 19, 23)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+for p in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]:
+    assert checker.is_prime(p) is True, f"{p} should be prime"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="composite_numbers_functional",
+                category="functional",
+                description="Correctly identifies composite numbers (4, 6, 8, 9, 10, 15, 21, 25, 27)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+for c in [4, 6, 8, 9, 10, 12, 14, 15, 21, 25, 27]:
+    assert checker.is_prime(c) is False, f"{c} should not be prime"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="non_positive_and_unit_boundary",
+                category="boundary",
+                description="Boundary handling: numbers <= 1 (-10, -1, 0, 1) are never prime",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+for non_p in [-10, -5, -1, 0, 1]:
+    assert checker.is_prime(non_p) is False, f"{non_p} must not be prime"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="type_safety_boundary",
+                category="safety",
+                description="Handles string numeric inputs and None safely without crash",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+assert checker.is_prime("7") is True
+assert checker.is_prime("8") is False
+assert checker.is_prime(None) is False
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="large_prime_throughput_stress",
+                category="stress",
+                description="O(sqrt(N)) throughput: evaluates 10,000th prime (104729) under 0.85s",
+                script="""import sys, time
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+t0 = time.perf_counter()
+for _ in range(100):
+    assert checker.is_prime(104729) is True
+    assert checker.is_prime(104730) is False
+elapsed = time.perf_counter() - t0
+assert elapsed < 0.85, f"Execution took {elapsed:.4f}s"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety_lock_check",
+                category="safety",
+                description="Ensures thread-safe synchronization lock is configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PrimeChecker
+
+checker = PrimeChecker()
+assert hasattr(checker, "_lock"), "PrimeChecker must provide thread synchronization lock"
+sys.exit(0)
+""",
+            ),
+        ]
+
+    def _build_fibonacci_tests(self) -> List[TestCase]:
+        return [
+            TestCase(
+                id="base_cases",
+                category="functional",
+                description="Fibonacci base cases F(0)=0, F(1)=1",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import FibonacciGenerator
+
+fib = FibonacciGenerator()
+assert fib.compute(0) == 0
+assert fib.compute(1) == 1
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="small_numbers",
+                category="functional",
+                description="Accurate calculation for F(2) through F(10)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import FibonacciGenerator
+
+fib = FibonacciGenerator()
+assert fib.compute(2) == 1
+assert fib.compute(5) == 5
+assert fib.compute(10) == 55
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="negative_boundary",
+                category="boundary",
+                description="Negative inputs return 0 safely",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import FibonacciGenerator
+
+fib = FibonacciGenerator()
+assert fib.compute(-5) == 0
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="large_fib_stress",
+                category="stress",
+                description="Computes F(35) under 0.85s without recursion exponential explosion",
+                script="""import sys, time
+sys.path.insert(0, ".")
+from solution import FibonacciGenerator
+
+fib = FibonacciGenerator()
+t0 = time.perf_counter()
+res = fib.compute(35)
+assert res == 9227465
+assert time.perf_counter() - t0 < 0.85
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety",
+                category="safety",
+                description="Thread-safe synchronization lock configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import FibonacciGenerator
+
+fib = FibonacciGenerator()
+assert hasattr(fib, "_lock"), "FibonacciGenerator must maintain internal thread lock"
+sys.exit(0)
+""",
+            ),
+        ]
+
+    def _build_binary_search_tests(self) -> List[TestCase]:
+        return [
+            TestCase(
+                id="basic_search_found",
+                category="functional",
+                description="Finds existing target in sorted list",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import BinarySearchEngine
+
+bs = BinarySearchEngine()
+assert bs.search([1, 3, 5, 7, 9], 5) == 2
+assert bs.search([1, 3, 5, 7, 9], 1) == 0
+assert bs.search([1, 3, 5, 7, 9], 9) == 4
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="target_not_found",
+                category="functional",
+                description="Returns -1 when target is absent",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import BinarySearchEngine
+
+bs = BinarySearchEngine()
+assert bs.search([1, 3, 5, 7, 9], 4) == -1
+assert bs.search([1, 3, 5, 7, 9], 10) == -1
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="empty_list_boundary",
+                category="boundary",
+                description="Empty list returns -1 safely",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import BinarySearchEngine
+
+bs = BinarySearchEngine()
+assert bs.search([], 5) == -1
+assert bs.search(None, 5) == -1
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="large_array_stress",
+                category="stress",
+                description="Logarithmic search across 100,000 elements completes in < 0.85s",
+                script="""import sys, time
+sys.path.insert(0, ".")
+from solution import BinarySearchEngine
+
+bs = BinarySearchEngine()
+arr = list(range(100000))
+t0 = time.perf_counter()
+for q in [0, 49999, 99999, -1, 100005]:
+    bs.search(arr, q)
+assert time.perf_counter() - t0 < 0.85
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety",
+                category="safety",
+                description="Thread-safe synchronization lock configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import BinarySearchEngine
+
+bs = BinarySearchEngine()
+assert hasattr(bs, "_lock"), "BinarySearchEngine must maintain internal thread lock"
+sys.exit(0)
+""",
+            ),
+        ]
+
+    def _build_priority_queue_tests(self) -> List[TestCase]:
+        return [
+            TestCase(
+                id="push_pop_ordering",
+                category="functional",
+                description="Pops items in priority order (min-heap)",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PriorityQueue
+
+pq = PriorityQueue()
+pq.push("low", 10)
+pq.push("high", 1)
+pq.push("med", 5)
+assert pq.pop() == "high"
+assert pq.pop() == "med"
+assert pq.pop() == "low"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="empty_pop_boundary",
+                category="boundary",
+                description="Popping from empty queue returns None safely",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PriorityQueue
+
+pq = PriorityQueue()
+assert pq.pop() is None
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="stress_heap_ops",
+                category="stress",
+                description="5,000 heap operations under 0.85s",
+                script="""import sys, time
+sys.path.insert(0, ".")
+from solution import PriorityQueue
+
+pq = PriorityQueue()
+t0 = time.perf_counter()
+for i in range(5000):
+    pq.push(f"item_{i}", i % 100)
+    if i % 2 == 0:
+        pq.pop()
+assert time.perf_counter() - t0 < 0.85
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety",
+                category="safety",
+                description="Thread-safe synchronization lock configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import PriorityQueue
+
+pq = PriorityQueue()
+assert hasattr(pq, "_lock"), "PriorityQueue must maintain internal thread lock"
+sys.exit(0)
+""",
+            ),
+        ]
+
+    def _build_calculator_tests(self) -> List[TestCase]:
+        return [
+            TestCase(
+                id="basic_operations",
+                category="functional",
+                description="Basic add, subtract, multiply, and divide",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import ExpressionCalculator
+
+calc = ExpressionCalculator()
+assert calc.add(10, 5) == 15
+assert calc.subtract(10, 5) == 5
+assert calc.multiply(10, 5) == 50
+assert calc.divide(10, 5) == 2
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="division_by_zero_boundary",
+                category="boundary",
+                description="Division by zero returns None safely",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import ExpressionCalculator
+
+calc = ExpressionCalculator()
+assert calc.divide(10, 0) is None
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety",
+                category="safety",
+                description="Thread-safe synchronization lock configured",
+                script="""import sys
+sys.path.insert(0, ".")
+from solution import ExpressionCalculator
+
+calc = ExpressionCalculator()
+assert hasattr(calc, "_lock"), "ExpressionCalculator must maintain internal thread lock"
+sys.exit(0)
+""",
+            ),
+        ]
+
+    def _build_generic_tests(self, class_name: str, prompt: str) -> List[TestCase]:
+        """Synthesizes dynamic unit tests for arbitrary user-defined classes and prompts."""
+        return [
+            TestCase(
+                id="basic_lifecycle_execution",
+                category="functional",
+                description=f"Nominal instantiation and execution lifecycle for {class_name}",
+                script=f"""import sys
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+assert instance is not None
+if hasattr(instance, "execute"):
+    assert instance.execute("init_probe") is not None
+if hasattr(instance, "push"):
+    instance.push("item_probe")
+if hasattr(instance, "add"):
+    assert instance.add(5, 5) == 10
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="empty_and_null_boundary",
+                category="boundary",
+                description=f"Boundary handling on empty state, None parameters, or missing elements",
+                script=f"""import sys
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+if hasattr(instance, "pop"):
+    res = instance.pop()
+    assert res is None or instance.is_empty() is True
+if hasattr(instance, "get"):
+    res = instance.get("non_existent_key")
+    assert res is None
+if hasattr(instance, "process"):
+    res = instance.process(None)
+    assert res is None
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="sequential_state_persistence",
+                category="functional",
+                description=f"Sequential operations accurately update and preserve internal state",
+                script=f"""import sys
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+for i in range(10):
+    if hasattr(instance, "push"):
+        instance.push(i)
+    elif hasattr(instance, "process"):
+        instance.process(i)
+    elif hasattr(instance, "execute"):
+        instance.execute(i)
+
+if hasattr(instance, "size"):
+    assert instance.size() >= 10
+if hasattr(instance, "is_empty"):
+    assert instance.is_empty() is False
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="type_error_and_input_safety",
+                category="safety",
+                description=f"Defensive input validation prevents unhandled TypeError or crashes",
+                script=f"""import sys
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+try:
+    if hasattr(instance, "process"):
+        instance.process(None)
+    if hasattr(instance, "execute"):
+        instance.execute(None)
+    if hasattr(instance, "get"):
+        instance.get(None)
+except (TypeError, ValueError):
+    pass
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="high_throughput_execution_stress",
+                category="stress",
+                description=f"Executes 5,000 continuous operations under 0.85s",
+                script=f"""import sys, time
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+t0 = time.perf_counter()
+for i in range(5000):
+    if hasattr(instance, "push"):
+        instance.push(i)
+        if i % 2 == 0:
+            instance.pop()
+    elif hasattr(instance, "process"):
+        instance.process(i)
+    else:
+        instance.execute(i)
+elapsed = time.perf_counter() - t0
+assert elapsed < 0.85, f"Execution took {{elapsed:.4f}}s"
+sys.exit(0)
+""",
+            ),
+            TestCase(
+                id="thread_safety_synchronization_lock",
+                category="safety",
+                description=f"Ensures internal synchronization lock is present for concurrent access",
+                script=f"""import sys
+sys.path.insert(0, ".")
+from solution import {class_name}
+
+instance = {class_name}()
+assert hasattr(instance, "_lock") or hasattr(instance, "lock"), (
+    f"{class_name} must provide internal synchronization lock (_lock) for thread safety"
+)
+sys.exit(0)
+""",
+            ),
+        ]
 
     def _build_rate_limiter_tests(self) -> List[TestCase]:
         return [

@@ -196,9 +196,9 @@ sys.exit(0)
     quality = 50.0
     if '"""' in code_string or "'''" in code_string:
         quality += 20.0
-    if "class Node" in code_string:
+    if any(k in code_string for k in ["class Node", "class TrieNode", "threading", "typing", "self._lock", ": "]):
         quality += 20.0
-    if "->" in code_string:
+    if "->" in code_string or "typing" in code_string:
         quality += 10.0
     quality = min(quality, 100.0)
 

@@ -65,6 +65,7 @@ dashboard_runtime.json
 execution_trace.json
 module1/execution_trace.json
 **/execution_trace.json
+module2/inputs/
 
 # Large ZK Powers of Tau ceremonies
 *.ptau

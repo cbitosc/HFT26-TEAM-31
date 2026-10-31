@@ -181,11 +181,12 @@ def test_creator_node(state: AutoEvolveState) -> Dict[str, Any]:
     custom_prompt = state.get("custom_prompt")
     active_prompt = state.get("task_prompt", TASK_PROMPT)
     active_tests = state.get("active_tests")
+    force_mock = state.get("force_mock", True)
 
     if custom_prompt and custom_prompt.strip() and not active_tests:
         print(f"\n[LangGraph TestCaseCreator Node] Analyzing Custom User Prompt...")
         creator = TestCaseCreator(task_prompt=active_prompt)
-        active_tests = creator.create_test_suite()
+        active_tests = creator.create_test_suite(force_mock=force_mock)
         print(f"[LangGraph TestCaseCreator Node] Created {len(active_tests)} dynamic test cases.")
 
     return {
@@ -316,8 +317,8 @@ def attestation_node(state: AutoEvolveState) -> Dict[str, Any]:
     eval_v2 = v2_rec["eval"] if v2_rec else eval_v1
     eval_v3 = v3_rec["eval"] if v3_rec else state["eval_result"]
 
-    critique_1 = v2_rec.get("critique") or {}
-    critique_2 = v3_rec.get("critique") or {}
+    critique_1 = v2_rec.get("critique") if v2_rec else {}
+    critique_2 = v3_rec.get("critique") if v3_rec else {}
     critique_3 = critique_code(code_v3, eval_v3, attempt="v3", task_prompt=state.get("task_prompt", TASK_PROMPT), force_mock=state.get("force_mock", True))
 
     diff_v1_v2 = compute_unified_diff(code_v1, code_v2, "v1_failing.py", "v2_fixed.py")
@@ -437,14 +438,13 @@ def attestation_node(state: AutoEvolveState) -> Dict[str, Any]:
 def should_continue(state: AutoEvolveState) -> str:
     """
     LangGraph Conditional Edge Router:
-    - If score is 100.0 or maximum iteration limit (iteration >= 3) reached -> route to 'attestation'
-    - Otherwise -> route to 'critic' to evaluate failures and guide next revision.
+    Always iterates through 3 stages (V1 -> V2 -> V3) to satisfy protocol and
+    Groth16 ZK proof verification requirements (verifying improvement across V1->V2 and V2->V3).
+    - If iteration >= 3: route to 'attestation'
+    - Otherwise: route to 'critic' to evaluate failures and guide next revision.
     """
     iteration = state.get("iteration", 1)
-    eval_result = state.get("eval_result", {})
-    score = eval_result.get("final_score", 0.0)
-
-    if score >= 100.0 or iteration >= 3:
+    if iteration >= 3:
         return "attestation"
     return "critic"
 

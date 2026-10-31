@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 function getRepoRoot(): string {
   if (fs.existsSync(path.join(process.cwd(), "pipeline.py"))) {
@@ -19,15 +19,21 @@ const DASHBOARD_RUNTIME_FILE = path.join(REPO_ROOT, "dashboard_runtime.json");
 const ENRICHED_TRACE_FILE = path.join(REPO_ROOT, "module2", "build", "execution_trace_with_proofs.json");
 
 function getPythonExecutable(): string {
+  if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
+    return process.env.PYTHON_PATH;
+  }
   const venvPythonWin = path.join(REPO_ROOT, ".venv", "Scripts", "python.exe");
   if (fs.existsSync(venvPythonWin)) {
-    return `"${venvPythonWin}"`;
+    return venvPythonWin;
   }
   const venvPythonPosix = path.join(REPO_ROOT, ".venv", "bin", "python");
   if (fs.existsSync(venvPythonPosix)) {
-    return `"${venvPythonPosix}"`;
+    return venvPythonPosix;
   }
-  return "py -3.13";
+  if (fs.existsSync("C:\\Python313\\python.exe")) {
+    return "C:\\Python313\\python.exe";
+  }
+  return "python";
 }
 
 function getFallbackPayload() {
@@ -192,7 +198,11 @@ export async function GET() {
   try {
     const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
-    await execAsync(`${pythonExe} "${pipelinePy}" --run-agent`, { cwd: REPO_ROOT });
+    await execFileAsync(pythonExe, ["-u", pipelinePy, "--run-agent"], {
+      cwd: REPO_ROOT,
+      maxBuffer: 1024 * 1024 * 25,
+      timeout: 180000,
+    });
     const fresh = getFallbackPayload();
     if (fresh) return NextResponse.json(fresh);
   } catch (err: any) {
@@ -205,18 +215,31 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const liveFlag = body.live ? "--live" : "";
-    const customPromptArg = body.custom_prompt && typeof body.custom_prompt === "string" && body.custom_prompt.trim().length > 0
-      ? `--custom-prompt "${body.custom_prompt.trim().replace(/"/g, '\\"')}"`
-      : "";
     const pythonExe = getPythonExecutable();
     const pipelinePy = path.join(REPO_ROOT, "pipeline.py");
 
-    const cmd = `${pythonExe} -u "${pipelinePy}" --run-agent ${liveFlag} ${customPromptArg}`.trim();
-    console.log(`[API /api/run-agent] Executing: ${cmd}`);
+    const args: string[] = ["-u", pipelinePy, "--run-agent"];
+    if (body.live) {
+      args.push("--live");
+    }
+    const hasCustomPrompt =
+      body.custom_prompt &&
+      typeof body.custom_prompt === "string" &&
+      body.custom_prompt.trim().length > 0;
 
-    const { stdout, stderr } = await execAsync(cmd, { cwd: REPO_ROOT });
-    console.log("[API /api/run-agent] Output:", stdout);
+    if (hasCustomPrompt) {
+      args.push("--custom-prompt", body.custom_prompt.trim());
+    }
+
+    console.log(`[API /api/run-agent] Spawning: ${pythonExe} ${args.join(" ")}`);
+
+    const { stdout, stderr } = await execFileAsync(pythonExe, args, {
+      cwd: REPO_ROOT,
+      maxBuffer: 1024 * 1024 * 25,
+      timeout: 180000,
+    });
+
+    console.log("[API /api/run-agent] Pipeline completed successfully.");
     if (stderr) console.warn("[API /api/run-agent] Stderr:", stderr);
 
     const fresh = getFallbackPayload();
@@ -226,16 +249,18 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Failed to read updated trace payload" }, { status: 500 });
   } catch (error: any) {
-    console.error("[API /api/run-agent] Execution failed:", error);
-    // If execution throws, fall back gracefully to existing telemetry
+    console.error("[API /api/run-agent] Execution failed:", error.message || error);
+    if (error.stdout) console.log("[API /api/run-agent] Stdout on error:", error.stdout);
+    if (error.stderr) console.error("[API /api/run-agent] Stderr on error:", error.stderr);
+
+    // If an error occurred, check if we have a fresh or fallback payload
     const fallback = getFallbackPayload();
     if (fallback) {
       return NextResponse.json(fallback);
     }
     return NextResponse.json(
-      { error: "Agent execution failed", details: error.message },
+      { error: "Agent execution failed", details: error.stderr || error.message },
       { status: 500 }
     );
   }
 }
-

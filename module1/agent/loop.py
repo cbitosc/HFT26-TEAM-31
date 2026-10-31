@@ -64,11 +64,23 @@ def infer_domain_metadata(
         arch_v1 = "Linear Scan List"
         arch_v2 = "collections.OrderedDict"
         arch_v3 = "Doubly Linked List (class Node)"
-    elif any(k in lower for k in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket"]):
+    elif any(k in lower for k in ["prime", "primality", "is_prime"]):
+        arch_v1 = "Trial Division Primality Algorithm (Baseline O(N))"
+        arch_v2 = "Square Root Optimization & Boundary Guards (O(sqrt(N)))"
+        arch_v3 = "Production Primality Engine (6k+/-1 Invariant + Strict Typing)"
+    elif any(k in lower for k in ["fibonacci", "fib"]):
+        arch_v1 = "Recursive Fibonacci (Baseline O(2^N))"
+        arch_v2 = "Memoized Dynamic Programming (O(N))"
+        arch_v3 = "Production Constant-Space Fibonacci Engine (O(1) Space + Types)"
+    elif any(k in lower for k in ["binary search", "binary_search"]):
+        arch_v1 = "Linear Scan Search (Baseline O(N))"
+        arch_v2 = "Iterative Binary Search with Midpoint Guard (O(log N))"
+        arch_v3 = "Production Binary Search Engine (Strict Typing + Docstrings)"
+    elif any(k in lower for k in ["rate_limiter", "ratelimiter", "rate limiter", "token bucket", "throttler"]):
         arch_v1 = "Token Bucket Prototype"
         arch_v2 = "Continuous Monotonic Time Refill"
         arch_v3 = "Thread-Safe Token Bucket (RLock + Type Hints)"
-    elif any(k in lower for k in ["ring buffer", "ringbuffer", "circular buffer", "fifo"]):
+    elif any(k in lower for k in ["ring buffer", "ringbuffer", "circular buffer", "fifo", "bounded ring"]):
         arch_v1 = "Circular Array Prototype"
         arch_v2 = "Boundary-Safe Circular Buffer"
         arch_v3 = "Thread-Safe Circular Ring Buffer (RLock + Modulo)"
@@ -80,12 +92,30 @@ def infer_domain_metadata(
         arch_v1 = "Min Tracking Stack Prototype"
         arch_v2 = "O(1) Paired Min Invariant Tuples"
         arch_v3 = "Production-Grade O(1) MinStack (Size + Types)"
+    elif any(k in lower for k in ["priority queue", "priorityqueue", "heap"]):
+        arch_v1 = "Linear Scan List (Baseline O(N))"
+        arch_v2 = "Binary Heap Array Representation (O(log N))"
+        arch_v3 = "Production-Grade Thread-Safe Priority Queue (RLock + Types)"
+    elif any(k in lower for k in ["calculator", "expression", "arithmetic"]):
+        arch_v1 = "Basic Arithmetic Evaluator"
+        arch_v2 = "Boundary-Guarded Tokenized Evaluator"
+        arch_v3 = "Production Shunting-Yard Expression Engine"
     else:
-        match = re.search(r"class\s+([A-Za-z0-9_]+)", active_prompt)
-        cname = match.group(1) if match else "CustomSolution"
+        try:
+            from agent.dynamic_synthesizer import DynamicProgramSynthesizer
+            cname = DynamicProgramSynthesizer.extract_class_name(active_prompt)
+        except Exception:
+            try:
+                from module1.agent.dynamic_synthesizer import DynamicProgramSynthesizer
+                cname = DynamicProgramSynthesizer.extract_class_name(active_prompt)
+            except Exception:
+                match = re.search(r"class\s+([A-Za-z0-9_]+)", active_prompt)
+                cname = match.group(1) if match else "SolutionEngine"
+        if not cname or cname == "CustomSolution":
+            cname = "SolutionEngine"
         arch_v1 = f"{cname} Baseline Prototype"
-        arch_v2 = f"{cname} Boundary-Hardened Revision"
-        arch_v3 = f"{cname} Thread-Safe Production Implementation"
+        arch_v2 = f"{cname} Optimized Revision"
+        arch_v3 = f"{cname} Production-Grade Architecture"
 
     lines_v1_v2_add = len([l for l in diff_v1_v2.splitlines() if l.startswith("+") and not l.startswith("+++")])
     lines_v1_v2_rem = len([l for l in diff_v1_v2.splitlines() if l.startswith("-") and not l.startswith("---")])
