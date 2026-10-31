@@ -253,3 +253,43 @@ class MemoryService:
             f"======================================================"
         )
         return prompt_str
+
+    def as_langchain_retriever(self, threshold: float = 0.80) -> Any:
+        """Exposes this MemoryService as a standard LangChain BaseRetriever.
+
+        Allows any LangChain or LangGraph agent to retrieve decentralized
+        prior failure fixes and diffs seamlessly via standard .invoke() / .get_relevant_documents().
+        """
+        try:
+            from langchain_core.retrievers import BaseRetriever
+            from langchain_core.documents import Document
+            from langchain_core.callbacks import CallbackManagerForRetrieverRun
+
+            service_self = self
+
+            class DataDAORetriever(BaseRetriever):
+                """LangChain-compatible retriever for decentralized DataDAO memory."""
+                def _get_relevant_documents(
+                    self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun] = None
+                ) -> List[Document]:
+                    res = service_self.retrieve_inherited_memory(query, threshold=threshold)
+                    if not res:
+                        return []
+                    return [
+                        Document(
+                            page_content=res.get("inherited_diff") or res.get("prompt_injection") or "",
+                            metadata={
+                                "cid": res.get("matched_ipfs_cid"),
+                                "similarity_score": res.get("similarity_score"),
+                                "task_id": res.get("matched_task_id"),
+                                "failure_signature": res.get("failure_signature"),
+                                "root_cause": res.get("root_cause"),
+                                "fix_strategy": res.get("fix_strategy"),
+                            },
+                        )
+                    ]
+
+            return DataDAORetriever()
+        except ImportError:
+            logger.warning("langchain_core not installed; cannot construct LangChain retriever.")
+            return None

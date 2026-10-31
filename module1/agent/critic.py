@@ -22,6 +22,15 @@ try:
 except ImportError:
     requests = None
 
+# LangChain Core Integration
+try:
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.messages import SystemMessage, HumanMessage
+    from langchain_core.runnables import RunnableLambda
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+
 logger = logging.getLogger("AutoEvolve.Critic")
 
 
@@ -384,30 +393,45 @@ def critique_code(
             f"Provide your structured critique wrapped in ```json ```."
         )
 
-    payload = {
-        "model": resolved_model,
-        "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message},
-        ],
-        "temperature": 0.0,
-        "seed": 42,
-    }
+    prompt_template = None
+    if LANGCHAIN_AVAILABLE:
+        prompt_template = ChatPromptTemplate.from_messages([
+            SystemMessage(content=system_message),
+            HumanMessage(content=user_message),
+        ])
+
+    def _call_critic_llm(msgs_input):
+        if hasattr(msgs_input, "to_messages"):
+            msgs = msgs_input.to_messages()
+            payload_messages = [{"role": "system" if isinstance(m, SystemMessage) else "user", "content": m.content} for m in msgs]
+        else:
+            payload_messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message},
+            ]
+        payload = {
+            "model": resolved_model,
+            "messages": payload_messages,
+            "temperature": 0.0,
+            "seed": 42,
+        }
+        res = requests.post(endpoint, headers=headers, json=payload, timeout=60)
+        res.raise_for_status()
+        msg = res.json()["choices"][0]["message"]
+        raw = msg.get("content") or msg.get("reasoning") or msg.get("reasoning_content") or ""
+        return raw
 
     max_retries = 2
     for attempt_idx in range(max_retries + 1):
         try:
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=60)
-            response.raise_for_status()
-            data = response.json()
-            message = data["choices"][0]["message"]
-            raw_text = message.get("content") or ""
-            if not raw_text.strip():
-                raw_text = message.get("reasoning") or message.get("reasoning_content") or ""
-            parsed = extract_critique_json(raw_text)
+            if LANGCHAIN_AVAILABLE and prompt_template:
+                critic_chain = prompt_template | RunnableLambda(_call_critic_llm) | RunnableLambda(extract_critique_json)
+                parsed = critic_chain.invoke({})
+            else:
+                raw_text = _call_critic_llm(None)
+                parsed = extract_critique_json(raw_text)
 
             if parsed and passes_guardrail(parsed):
-                # Ensure failed_tests field is present
                 if "failed_tests" not in parsed:
                     parsed["failed_tests"] = eval_result.get("failed_tests", [])
                 return parsed

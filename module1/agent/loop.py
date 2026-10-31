@@ -24,12 +24,14 @@ try:
     from agent.generator import generate_code
     from agent.critic import critique_code
     from agent.test_case_creator import TestCaseCreator
+    from agent.graph import run_graph_loop, build_autoevolve_graph, export_graph_mermaid
 except ImportError:
     from module1.agent.task import TASK_PROMPT
     from module1.agent.evaluator import evaluate_code
     from module1.agent.generator import generate_code
     from module1.agent.critic import critique_code
     from module1.agent.test_case_creator import TestCaseCreator
+    from module1.agent.graph import run_graph_loop, build_autoevolve_graph, export_graph_mermaid
 
 
 def compute_unified_diff(code_a: str, code_b: str, from_file: str, to_file: str) -> str:
@@ -196,16 +198,31 @@ def run_loop(
     custom_prompt: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Executes the complete multi-stage adversarial self-improvement loop:
-    V1 Generation -> Sandbox Evaluation -> Adversarial Critique ->
-    V2 Revision -> Sandbox Evaluation -> Adversarial Critique ->
-    V3 Revision -> Sandbox Evaluation -> Diff & Changelog -> ZK Inputs Commitment.
+    Executes the complete multi-stage adversarial self-improvement loop via LangGraph StateGraph:
+    Test Creator Node -> Generator Node -> Sandbox Evaluator Node -> (Conditional Edge) ->
+    Constitutional Critic Node -> Generator Node -> ... -> Attestation Node -> ZK Commitments.
 
     :param output_path: Destination JSON path for the execution trace.
     :param inherited_memory: DataDAO memory trace for Agent 2 skill inheritance.
     :param force_mock: If True (default for benchmark verification), runs the calibrated
                        52.0 -> 86.0 -> 100.0 offline trajectory. If False, queries live Featherless API.
+    :param custom_prompt: Optional user-specified task prompt for dynamic test & code synthesis.
+    :return: Complete structured trace dictionary.
     """
+    return run_graph_loop(
+        output_path=output_path,
+        inherited_memory=inherited_memory,
+        force_mock=force_mock,
+        custom_prompt=custom_prompt,
+    )
+
+
+def _legacy_procedural_run_loop(
+    output_path: str = "execution_trace.json",
+    inherited_memory: Optional[Dict[str, Any]] = None,
+    force_mock: bool = True,
+    custom_prompt: Optional[str] = None,
+) -> Dict[str, Any]:
     mode_label = "Calibrated Deterministic Mock" if force_mock else "Live Featherless API (Qwen 2.5 Coder + DeepSeek-R1)"
     print("=" * 72)
     print(f"  AutoEvolve Protocol - Adversarial Iterative Engine (V1 -> V2 -> V3)")

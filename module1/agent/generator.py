@@ -30,6 +30,16 @@ except ImportError:
     except ImportError:
         DynamicProgramSynthesizer = None
 
+# LangChain Core Integration
+try:
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.messages import SystemMessage, HumanMessage
+    from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.runnables import RunnableLambda
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+
 logger = logging.getLogger("AutoEvolve.Generator")
 
 
@@ -281,22 +291,39 @@ def generate_code(
                 f"4. Full type hints and Google-style docstrings."
             )
 
-    payload = {
-        "model": resolved_model,
-        "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.0,
-        "seed": 42,
-    }
+    prompt_template = None
+    if LANGCHAIN_AVAILABLE:
+        prompt_template = ChatPromptTemplate.from_messages([
+            SystemMessage(content=system_message),
+            HumanMessage(content=user_prompt),
+        ])
+
+    def _call_llm(msgs_input):
+        if hasattr(msgs_input, "to_messages"):
+            msgs = msgs_input.to_messages()
+            payload_messages = [{"role": "system" if isinstance(m, SystemMessage) else "user", "content": m.content} for m in msgs]
+        else:
+            payload_messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_prompt},
+            ]
+        payload = {
+            "model": resolved_model,
+            "messages": payload_messages,
+            "temperature": 0.0,
+            "seed": 42,
+        }
+        res = requests.post(endpoint, headers=headers, json=payload, timeout=60)
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"]
 
     try:
-        response = requests.post(endpoint, headers=headers, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        raw_text = data["choices"][0]["message"]["content"]
-        extracted = extract_python_code(raw_text)
+        if LANGCHAIN_AVAILABLE and prompt_template:
+            chain = prompt_template | RunnableLambda(_call_llm) | StrOutputParser() | RunnableLambda(extract_python_code)
+            extracted = chain.invoke({})
+        else:
+            raw_text = _call_llm(None)
+            extracted = extract_python_code(raw_text)
         if extracted:
             return extracted
         if is_custom and DynamicProgramSynthesizer is not None:
