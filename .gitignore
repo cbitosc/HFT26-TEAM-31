@@ -30,6 +30,10 @@ pnpm-debug.log*
 .turbo/
 
 # Python cache & build artifacts
+build/
+**/build/
+module2/build/
+dist/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -53,6 +57,12 @@ tmp/
 temp/
 .cache/
 **/.cache/
+
+# Runtime outputs & execution traces
+dashboard_runtime.json
+execution_trace.json
+module1/execution_trace.json
+**/execution_trace.json
 
 # Large ZK Powers of Tau ceremonies
 *.ptau
