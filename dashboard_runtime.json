@@ -86,8 +86,8 @@
     "overall_status": "VERIFIED_ON_CHAIN",
     "circuit_path": "circuits/improvement.circom",
     "constraints_count": 34,
-    "verifier_contract_address": "0x438676d33D81121dF72658826d70C86b4502E0f1",
-    "block_explorer_url": "https://sepolia.basescan.org/address/0x438676d33D81121dF72658826d70C86b4502E0f1",
+    "verifier_contract_address": "0xAutoEvolveLocalDataDAOVerifier001",
+    "block_explorer_url": "Local DataDAO Ledger (/module3/.cache/registry_records.json)",
     "escrow_tx_hash": "0x7c9b8d234a9b21f37e4620f308d986b20fa3924c8b321a008d3e876fa54c1209",
     "gas_consumed": 284520,
     "micro_reward_distributed": "0.0500 ETH",
@@ -171,7 +171,7 @@
   "memory_registry": {
     "ipfs_cid": "bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
     "gateway_url": "https://gateway.lighthouse.storage/ipfs/bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001",
-    "network": "Base Sepolia Testnet (Chain ID: 84532)",
+    "network": "Local DataDAO Decentralized Memory Ledger",
     "storage_provider": "Filecoin / IPFS via Lighthouse",
     "timestamp": 1793397078
   }

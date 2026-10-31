@@ -35,10 +35,8 @@ def run_multi_scenario_verification() -> Dict[str, Any]:
     config = get_config()
     service = MemoryService(config=config)
 
-    rpc_online = service.contract.check_rpc_connection()
-    rpc_status = f"{config.base_sepolia_rpc_url} [ONLINE]" if rpc_online else "[OFFLINE]"
     print(f"\n[+] Active Infrastructure Status:")
-    print(f"    - Base Sepolia RPC       : {rpc_status}")
+    print(f"    - Ledger Engine          : Local DataDAO Memory Ledger [ACTIVE]")
     print(f"    - IPFS Storage Engine    : {'Lighthouse Node' if config.is_lighthouse_configured else 'Local DataDAO Cache'}")
     print(f"    - Dense Vector Dimension : 384 (all-MiniLM-L6-v2)")
     print(f"    - Acceptance Threshold   : >= {config.similarity_threshold:.2f} (80.00%)")

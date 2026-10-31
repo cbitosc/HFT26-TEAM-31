@@ -139,7 +139,7 @@ export default function ZkTelemetryPanel({ zkTelemetry }: ZkTelemetryProps) {
         <div className="mt-6 pt-5 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950/80 border border-slate-800 text-xs font-mono">
             <div className="truncate mr-2">
-              <span className="text-slate-500 block text-[10px]">VERIFIER CONTRACT (BASE SEPOLIA)</span>
+              <span className="text-slate-500 block text-[10px]">VERIFIER CONTRACT (LOCAL DATADAO)</span>
               <span className="text-slate-300 truncate">{verifierContract}</span>
             </div>
             <div className="flex items-center space-x-1.5 flex-shrink-0">

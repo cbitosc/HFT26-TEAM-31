@@ -50,18 +50,13 @@ class Config:
 
     @property
     def base_sepolia_rpc_url(self) -> str:
-        """Base Sepolia RPC endpoint."""
-        return self.evm_rpc_url
+        """Ledger endpoint identifier."""
+        return "Local DataDAO Ledger"
 
     @property
     def is_contract_configured(self) -> bool:
-        """Check whether on-chain contract retrieval should be attempted."""
-        return bool(
-            self.registry_contract_address
-            and self.registry_contract_address.strip()
-            and self.registry_contract_address.strip() != "0x0000000000000000000000000000000000000000"
-            and self.evm_rpc_url
-        )
+        """Check whether on-chain retrieval is explicitly requested."""
+        return bool(self.use_onchain_registry and self.registry_contract_address)
 
     @property
     def is_lighthouse_configured(self) -> bool:
@@ -90,14 +85,8 @@ def get_config() -> Config:
         or "https://base-sepolia-rpc.publicnode.com"
     )
 
-    onchain_flag = os.getenv("USE_ONCHAIN_REGISTRY", "").strip().lower()
-    if onchain_flag in ("1", "true", "yes"):
-        use_onchain = True
-    elif onchain_flag in ("0", "false", "no"):
-        use_onchain = False
-    else:
-        # Default to True if contract address is present, else False (Local DataDAO backup)
-        use_onchain = bool(contract_addr)
+    onchain_flag = os.getenv("USE_ONCHAIN_REGISTRY", "false").strip().lower()
+    use_onchain = onchain_flag in ("1", "true", "yes")
 
     gateway_url = os.getenv(
         "LIGHTHOUSE_GATEWAY_URL",

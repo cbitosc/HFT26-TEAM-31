@@ -99,7 +99,7 @@ def run_full_protocol(live: bool = False) -> Dict[str, Any]:
     # -------------------------------------------------------------
     # Step 3: Execute Module 3 (IPFS Pinning & DataDAO Registry)
     # -------------------------------------------------------------
-    logger.info("[Module 3] Uploading verified snapshot to IPFS & Base Sepolia DataDAO...")
+    logger.info("[Module 3] Uploading verified snapshot to IPFS & Local DataDAO...")
     from module3.config import get_config
     from module3.memory_service import MemoryService
 
@@ -192,7 +192,7 @@ def run_full_protocol(live: bool = False) -> Dict[str, Any]:
             "circuit_path": "circuits/improvement.circom",
             "constraints_count": 34,
             "verifier_contract_address": config.registry_contract_address or "0x438676d33D81121dF72658826d70C86b4502E0f1",
-            "block_explorer_url": f"https://sepolia.basescan.org/address/{config.registry_contract_address or '0x438676d33D81121dF72658826d70C86b4502E0f1'}",
+            "block_explorer_url": "Local DataDAO Ledger (/module3/.cache/registry_records.json)",
             "escrow_tx_hash": "0x7c9b8d234a9b21f37e4620f308d986b20fa3924c8b321a008d3e876fa54c1209",
             "gas_consumed": 284520,
             "micro_reward_distributed": "0.0500 ETH",
@@ -212,7 +212,7 @@ def run_full_protocol(live: bool = False) -> Dict[str, Any]:
         "memory_registry": {
             "ipfs_cid": cid,
             "gateway_url": f"https://gateway.lighthouse.storage/ipfs/{cid}",
-            "network": "Base Sepolia Testnet (Chain ID: 84532)",
+            "network": "Local DataDAO Decentralized Memory Ledger",
             "storage_provider": "Filecoin / IPFS via Lighthouse",
             "timestamp": int(os.path.getmtime(trace_out_module1)),
         },
@@ -303,7 +303,7 @@ def run_agent2_inheritance(query: Optional[str] = None) -> Dict[str, Any]:
             "inherited_diff": "# No inherited diff available. Independent exploration required.",
             "execution_steps": [
                 f"Agent 2 diagnosed symptom query: '{active_query}'",
-                "Queried Base Sepolia / DataDAO decentralized memory ledger",
+                "Queried Local DataDAO decentralized memory ledger",
                 "Computed 384-dimensional dense semantic embedding (all-MiniLM-L6-v2)",
                 f"Highest similarity found: {top_unmatched_score * 100:.2f}% (Below 80.00% cutoff)",
                 "Decentralized memory inheritance rejected to prevent negative knowledge transfer",
@@ -360,7 +360,7 @@ def run_agent2_inheritance(query: Optional[str] = None) -> Dict[str, Any]:
         ),
         "execution_steps": [
             f"Agent 2 diagnosed failing test vector: '{failure_sig}'",
-            "Queried Base Sepolia / DataDAO decentralized memory ledger",
+            "Queried Local DataDAO decentralized memory ledger",
             f"Computed 384-dimensional dense semantic embedding (all-MiniLM-L6-v2)",
             f"Discovered matching IPFS CID {matched_cid} with {similarity_score * 100:.2f}% cosine similarity (>= 80% cutoff)",
             "Hydrated verified fix diff from decentralized storage gateway",

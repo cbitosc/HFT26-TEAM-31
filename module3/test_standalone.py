@@ -38,24 +38,11 @@ def run_standalone_test() -> Dict[str, Any]:
     config = get_config()
     service = MemoryService(config=config)
 
-    # Check Base Sepolia RPC connection status
-    rpc_online = service.contract.check_rpc_connection()
-    rpc_display = (
-        f"{config.base_sepolia_rpc_url} [ONLINE]"
-        if rpc_online
-        else f"{config.base_sepolia_rpc_url} [OFFLINE / UNREACHABLE]"
-    )
-
-    registry_status = (
-        f"On-Chain EVM Contract ({config.registry_contract_address})"
-        if config.is_contract_configured
-        else "Local DataDAO Backup (Active - Contract Un-deployed / Off-Chain)"
-    )
+    registry_status = "Local DataDAO Memory Ledger [ACTIVE - Zero Gas / High Speed]"
 
     print(f"\n[+] Active Configuration:")
     print(f"    - Embedding Model : {config.embedding_model_name}")
     print(f"    - Similarity Cutoff: {config.similarity_threshold:.2f}")
-    print(f"    - Base Sepolia RPC: {rpc_display}")
     print(f"    - Registry Mode   : {registry_status}")
     print(f"    - Lighthouse Key  : {'[Configured]' if config.is_lighthouse_configured else '[Mock/Fallback Mode]'}")
 

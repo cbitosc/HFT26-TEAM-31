@@ -108,7 +108,7 @@ export default function Agent2MemoryTab({
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Secondary independent agent queries Base Sepolia registry, computes dense vector similarity, and ingests verified fix history.
+                Secondary independent agent queries Local DataDAO registry, computes dense vector similarity, and ingests verified fix history.
               </p>
             </div>
           </div>

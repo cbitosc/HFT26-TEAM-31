@@ -87,7 +87,7 @@ Verified Reference Code Diff:
 `,
   execution_steps: [
     "Agent 2 diagnosed failing test vector: 'edge_case_capacity_zero'",
-    "Queried Base Sepolia / DataDAO decentralized memory ledger",
+    "Queried Local DataDAO decentralized memory ledger",
     "Computed 384-dimensional dense semantic embedding (all-MiniLM-L6-v2)",
     "Discovered matching IPFS CID bafybeicg2k3p6h4f5q7y3x8w9z0lrucachezeroedgecase0001 with 80.45% cosine similarity (>= 80% cutoff)",
     "Hydrated verified fix diff from decentralized storage gateway",
