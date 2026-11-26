@@ -1,0 +1,363 @@
+{
+  "policy_version": 1,
+  "success_rate": 0.22,
+  "death_by_lava_pct": 0.0,
+  "death_by_monster_pct": 78.0,
+  "avg_treasure": 0.0,
+  "avg_steps": 9,
+  "failure_traces": [
+    {
+      "map_id": 0,
+      "map_name": "Lava Crucible",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 0
+    },
+    {
+      "map_id": 0,
+      "map_name": "Lava Crucible",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 1
+    },
+    {
+      "map_id": 0,
+      "map_name": "Lava Crucible",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 3
+    },
+    {
+      "map_id": 0,
+      "map_name": "Lava Crucible",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 4
+    },
+    {
+      "map_id": 1,
+      "map_name": "Monster Bastion",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 0
+    },
+    {
+      "map_id": 1,
+      "map_name": "Monster Bastion",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 1
+    },
+    {
+      "map_id": 1,
+      "map_name": "Monster Bastion",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 2
+    },
+    {
+      "map_id": 1,
+      "map_name": "Monster Bastion",
+      "path": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "cause": "monster",
+      "died_at": [
+        6,
+        3
+      ],
+      "run_seed": 3
+    }
+  ],
+  "score": 0.232
+}

@@ -1,0 +1,9 @@
+{
+  "score": 0.1,
+  "failure_modes": [
+    "Lethal lava burns",
+    "Direct path shortcutting into hazards"
+  ],
+  "root_cause": "COSTS['lava'] is 3, making lava cells appear cheaper than corridors.",
+  "instruction_for_next_generator": "For V3: You must increase COSTS['lava'] from 3 to 100. V2 died 100% in lava near (5, 1) because lava penalty was 3 so A* cut through lava."
+}

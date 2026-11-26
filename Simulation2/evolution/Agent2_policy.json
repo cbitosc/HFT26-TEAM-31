@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "COSTS": {
+    "lava": 100,
+    "monster": 50,
+    "treasure": -15,
+    "step": 1
+  },
+  "avoidance_radius": 2,
+  "changelog": "Derived from Agent 1 memory: Avoided V1 monster ambush death at [6, 3] by setting monster cost to 50 and radius to 2; avoided V2 lethal lava burn at [6, 1] by setting lava cost to 100; solved V3 treasure deficit (0 gold) by setting treasure incentive to -15. Resulting COSTS: lava=100, monster=50, treasure=-15, step=1."
+}

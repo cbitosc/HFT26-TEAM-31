@@ -1,0 +1,10 @@
+{
+  "policy_version": 1,
+  "success_rate": 1.0,
+  "death_by_lava_pct": 0.0,
+  "death_by_monster_pct": 0.0,
+  "avg_treasure": 3.0,
+  "avg_steps": 27,
+  "failure_traces": [],
+  "score": 0.97
+}

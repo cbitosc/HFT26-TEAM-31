@@ -1,0 +1,15 @@
+{
+  "name": "autoevolve-module2",
+  "version": "1.0.0",
+  "description": "ZK-Attested improvement and safety proofs for AutoEvolve Protocol using Circom and Groth16",
+  "main": "scripts/prove.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "prove": "node scripts/prove.js"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.5"
+  }
+}
+

@@ -1,0 +1,767 @@
+{
+  "task": "Task 1: Agent 1 Evolution Ledger",
+  "version_count": 4,
+  "total_eval_episodes": 200,
+  "total_failure_traces": 200,
+  "evolved_prompts": {
+    "phase": 0,
+    "meta_model": "fallback_default",
+    "generator_system": "You are AutoEvolve Generator. Output ONLY valid JSON:\n{\"COSTS\": {\"lava\": int, \"monster\": int, \"treasure\": int, \"step\": int}, \"avoidance_radius\": int, \"changelog\": \"string\"}\nYou MUST obey instruction_for_next_generator from Critique. Your changelog must explicitly cite the exact numeric COSTS modifications you made and why.",
+    "critique_system": "You are AutoEvolve Critique. Return ONLY valid JSON:\n{\"score\": float, \"failure_modes\": [\"string\"], \"root_cause\": \"string\", \"instruction_for_next_generator\": \"string\"}\nScore formula: score = success_rate * 0.6 + (avg_treasure / 6.0) * 0.3 + (1.0 / max(avg_steps, 1)) * 0.1\nYour instruction_for_next_generator MUST start with 'For V{next}: You must...' and prescribe exact COSTS values referencing empirical failure percentages."
+  },
+  "generations": [
+    {
+      "version": 1,
+      "policy": {
+        "version": 1,
+        "COSTS": {
+          "lava": 3,
+          "monster": 2,
+          "treasure": -4,
+          "step": 1
+        },
+        "avoidance_radius": 1,
+        "changelog": "Genesis Seed (Success: 100%, Fitness: 0.857)"
+      },
+      "test_result": {
+        "policy_version": 1,
+        "success_rate": 0.22,
+        "death_by_lava_pct": 0.0,
+        "death_by_monster_pct": 78.0,
+        "avg_treasure": 0.0,
+        "avg_steps": 9,
+        "failure_traces": [
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 0
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 1
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 3
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 4
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 0
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 1
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 2
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "cause": "monster",
+            "died_at": [
+              6,
+              3
+            ],
+            "run_seed": 3
+          }
+        ],
+        "score": 0.232
+      },
+      "critique": {
+        "score": 0.232,
+        "failure_modes": [
+          "Monster ambushes",
+          "Greedy pathing into threat zones"
+        ],
+        "root_cause": "Agent greedily cut close to monsters with low avoidance radius and low monster penalty.",
+        "instruction_for_next_generator": "For V2: You must increase COSTS['monster'] to 50 and avoidance_radius to 2. V1 died 78% to monsters because it goes greedy to treasure ignoring monsters."
+      }
+    },
+    {
+      "version": 2,
+      "policy": {
+        "version": 2,
+        "COSTS": {
+          "lava": 3,
+          "monster": 50,
+          "treasure": -1,
+          "step": 1
+        },
+        "avoidance_radius": 2,
+        "changelog": "Refined per Critique: increased COSTS['monster'] to 50 & avoidance_radius to 2, reset treasure incentive to cautious -1"
+      },
+      "test_result": {
+        "policy_version": 2,
+        "success_rate": 0.0,
+        "death_by_lava_pct": 100.0,
+        "death_by_monster_pct": 0.0,
+        "avg_treasure": 0.0,
+        "avg_steps": 4,
+        "failure_traces": [
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              5,
+              1
+            ],
+            "run_seed": 0
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              5,
+              1
+            ],
+            "run_seed": 1
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              5,
+              1
+            ],
+            "run_seed": 2
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              5,
+              1
+            ],
+            "run_seed": 3
+          },
+          {
+            "map_id": 0,
+            "map_name": "Lava Crucible",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              5,
+              1
+            ],
+            "run_seed": 4
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ],
+              [
+                6,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              6,
+              1
+            ],
+            "run_seed": 0
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ],
+              [
+                6,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              6,
+              1
+            ],
+            "run_seed": 1
+          },
+          {
+            "map_id": 1,
+            "map_name": "Monster Bastion",
+            "path": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ],
+              [
+                6,
+                1
+              ]
+            ],
+            "cause": "lava",
+            "died_at": [
+              6,
+              1
+            ],
+            "run_seed": 2
+          }
+        ],
+        "score": 0.1
+      },
+      "critique": {
+        "score": 0.1,
+        "failure_modes": [
+          "Lethal lava burns",
+          "Direct path shortcutting into hazards"
+        ],
+        "root_cause": "COSTS['lava'] is 3, making lava cells appear cheaper than corridors.",
+        "instruction_for_next_generator": "For V3: You must increase COSTS['lava'] from 3 to 100. V2 died 100% in lava near (5, 1) because lava penalty was 3 so A* cut through lava."
+      }
+    },
+    {
+      "version": 3,
+      "policy": {
+        "version": 3,
+        "COSTS": {
+          "lava": 100,
+          "monster": 50,
+          "treasure": -1,
+          "step": 1
+        },
+        "avoidance_radius": 2,
+        "changelog": "Refined per Critique: increased COSTS['lava'] to 100 to eliminate shortcut deaths"
+      },
+      "test_result": {
+        "policy_version": 3,
+        "success_rate": 1.0,
+        "death_by_lava_pct": 0.0,
+        "death_by_monster_pct": 0.0,
+        "avg_treasure": 0.3,
+        "avg_steps": 25,
+        "failure_traces": [],
+        "score": 0.724
+      },
+      "critique": {
+        "score": 0.724,
+        "failure_modes": [
+          "Suboptimal treasure acquisition",
+          "Overly timid exploration"
+        ],
+        "root_cause": "Treasure reward incentive is too weak to motivate safe alcove detours.",
+        "instruction_for_next_generator": "For V4: You are too safe, treasure only 0.30. Decrease COSTS['treasure'] to -15 while keeping lava 100."
+      }
+    },
+    {
+      "version": 4,
+      "policy": {
+        "version": 4,
+        "COSTS": {
+          "lava": 100,
+          "monster": 50,
+          "treasure": -15,
+          "step": 1
+        },
+        "avoidance_radius": 2,
+        "changelog": "Refined per Critique: decreased COSTS['treasure'] to -15 while preserving lava=100 & monster=50"
+      },
+      "test_result": {
+        "policy_version": 4,
+        "success_rate": 1.0,
+        "death_by_lava_pct": 0.0,
+        "death_by_monster_pct": 0.0,
+        "avg_treasure": 3.0,
+        "avg_steps": 27,
+        "failure_traces": [],
+        "score": 0.97
+      },
+      "critique": {
+        "score": 0.97,
+        "failure_modes": [
+          "Minor efficiency loss"
+        ],
+        "root_cause": "Agent policy is near-optimal; fine-tuning completed.",
+        "instruction_for_next_generator": "For V5: Optimize efficiency, reduce step cost, keep lava 100, monster 50, and treasure -15."
+      }
+    }
+  ]
+}

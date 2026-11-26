@@ -1,0 +1,9 @@
+{
+  "score": 0.724,
+  "failure_modes": [
+    "Suboptimal treasure acquisition",
+    "Overly timid exploration"
+  ],
+  "root_cause": "Treasure reward incentive is too weak to motivate safe alcove detours.",
+  "instruction_for_next_generator": "For V4: You are too safe, treasure only 0.30. Decrease COSTS['treasure'] to -15 while keeping lava 100."
+}
